@@ -12,6 +12,7 @@ bug-reports: "https://github.com/Tchou/stt/issues"
 depends: [
   "ocaml"
   "dune" {>= "2.8"}
+  "zarith"
   "odoc" {with-doc}
 ]
 build: [
