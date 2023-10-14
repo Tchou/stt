@@ -14,7 +14,7 @@ let ( !@ ) =
 
 let ( !. ) =
   List.fold_left
-    (fun acc i -> Char.cup acc (Char.atom (Uchar.of_char i)))
+    (fun acc i -> Char.cup acc (Char.singleton (Uchar.of_char i)))
     Char.empty
 
 let l1 = !![ 65, 100; 255, 300; 450, 900 ]

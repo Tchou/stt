@@ -14,6 +14,7 @@ module Make (X : V) = struct
 
   type elem = X.t
 
+  let name = "Interval"
   let empty = []
   let is_empty = function [] -> true | _ -> false
   let any_range = X.min, X.max
@@ -79,6 +80,7 @@ module Make (X : V) = struct
 
   let neg i = diff any i
   let range a b = [ a, b ]
+  let singleton a = range a a
 
   let rec intersect i1 i2 =
     match i1, i2 with

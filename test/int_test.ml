@@ -7,7 +7,7 @@ let ( !! ) =
     Int.empty
 
 let ( !. ) =
-  List.fold_left (fun acc i -> Int.cup acc (Int.atom (Z.of_int i))) Int.empty
+  List.fold_left (fun acc i -> Int.(cup acc (singleton (Z.of_int i)))) Int.empty
 
 let l1 = !![ 65, 100; 255, 300; 450, 900 ]
 let l2 = !![ 70, 99; 100, 255; 350, 400; 402, 800 ]

@@ -65,19 +65,3 @@ module List (X : T) : T with type t = X.t list = struct
       (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") X.pp)
       l
 end
-
-module Uchar = struct
-  include Uchar
-  let pp fmt u =
-    let i = Uchar.to_int u in
-    if
-      (i >= 0x00 && i < 0x1f)
-      || i == 0x7f
-      || (i >= 0x80 && i <= 0x9f)
-      || i >= 0x40000
-    then Format.fprintf fmt "\\u%x" i
-    else
-      let b = Bytes.create (Uchar.utf_8_byte_length u) in
-      ignore (Bytes.set_utf_8_uchar b 0 u);
-      Format.pp_print_bytes fmt b
-end

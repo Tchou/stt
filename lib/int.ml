@@ -1,3 +1,5 @@
+open Utils
+
 module X = struct
   type t =
     | NegInf
@@ -68,6 +70,7 @@ let mem x i = I.mem (Num x) i
 let left a = I.range X.NegInf (X.Num a)
 let right a = I.range (X.Num a) X.PosInf
 let range a b = I.range (X.Num a) (X.Num b)
+let singleton a = range a a
 
 let sample i =
   match i with
@@ -76,7 +79,3 @@ let sample i =
   | (X.Num a, _) :: _ -> Some a
   | (_, X.Num b) :: _ -> Some b
   | _ -> assert false
-
-type atom = Z.t
-
-let atom a = range a a

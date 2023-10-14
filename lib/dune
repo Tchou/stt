@@ -1,4 +1,4 @@
 (library
  (public_name stt)
  (name stt)
- (libraries zarith))
+ (libraries zarith utils))

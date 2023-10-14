@@ -1,3 +1,5 @@
+open Utils
+
 (* From:
    https://github.com/dbuenzli/hmap/blob/master/src/hmap.ml
 *)
@@ -34,7 +36,7 @@ type 'a kind_index = {
 }
 
 module type Component = sig
-  include Sigs.Kind
+  include Sigs.Set
 
   val index : t kind_index
 end
@@ -71,7 +73,7 @@ let gen_index ~name =
 
 module DummyComponent = struct
   type t = unit
-  type atom = unit
+  type elem = unit
 
   let name = "__DUMMY__"
   let hash () = assert false
@@ -89,6 +91,10 @@ module DummyComponent = struct
   let dnf () = assert false
   let index = gen_index ~name
   let pp _ () = assert false
+  let singleton () = assert false
+  let intersect () () = assert false
+  let sample () = assert false
+  let mem () () = assert false
 end
 
 let modules : mod_pack array =
@@ -103,8 +109,8 @@ let get_module (type a) (index : a kind_index) :
   let module M = (val m) in
   match eq index.tid M.index.tid with Teq -> m
 
-module MakeComponent (K : Sigs.Kind) () :
-  Component with type t = K.t and type atom = K.atom = struct
+module MakeComponent (K : Sigs.Set) () :
+  Component with type t = K.t and type elem = K.elem = struct
   module C = struct
     include K
 
@@ -131,7 +137,6 @@ let set (type a) tab (index : a kind_index) (v : a) =
   Array.unsafe_set tab index.idx v
 
 let ( .%()<- ) tab i v = set tab i v
-
 let iter f (t : t) = Array.iter (fun (K (k, v)) -> f.iter v (get_module k)) t
 
 let fold f acc (t : t) =
