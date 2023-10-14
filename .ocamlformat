@@ -1,0 +1,13 @@
+profile = conventional
+break-cases =fit 
+break-fun-decl = fit-or-vertical
+exp-grouping = preserve
+if-then-else = compact
+let-and = sparse
+single-case = sparse
+type-decl = sparse
+dock-collection-brackets = true
+parens-tuple-patterns= multi-line-only
+parens-tuple = multi-line-only
+indicate-nested-or-patterns = space
+

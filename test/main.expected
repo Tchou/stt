@@ -1,0 +1,37 @@
+Test: 'Char' (2/2)
+      Serie: 'Char.union': (5/5)
+             
+             'Char.union.1': PASSED
+                 expected: 'A'--'Z'
+                   result: 'A'--'Z'
+             'Char.union.2': PASSED
+                 expected: 'A'--'Z'
+                   result: 'A'--'Z'
+             'Char.union.3': PASSED
+                 expected: 'A'--'E'
+                   result: 'A'--'E'
+             'Char.union.4': PASSED
+                 expected: Char
+                   result: Char
+             'Char.union.5': PASSED
+                 expected: 'A'--'Ĭ'|'Ş'--'Ɛ'|'ƒ'--'΄'
+                   result: 'A'--'Ĭ'|'Ş'--'Ɛ'|'ƒ'--'΄'
+             
+      --
+      Serie: 'Char.inter': (4/4)
+             
+             'Char.inter.1': PASSED
+                 expected: Empty
+                   result: Empty
+             'Char.inter.2': PASSED
+                 expected: 'D'--'G'
+                   result: 'D'--'G'
+             'Char.inter.3': PASSED
+                 expected: Char
+                   result: Char
+             'Char.inter.4': PASSED
+                 expected: 'F'--'d'|'ÿ'|'ǂ'--'̠'
+                   result: 'F'--'d'|'ÿ'|'ǂ'--'̠'
+             
+      --
+      

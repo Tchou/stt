@@ -1,2 +1,3 @@
 (test
- (name stt))
+ (name main)
+ (libraries stt zarith))
