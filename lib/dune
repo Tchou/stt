@@ -1,0 +1,3 @@
+(library
+ (public_name stt)
+ (name stt))
