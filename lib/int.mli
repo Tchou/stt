@@ -1,4 +1,4 @@
-open Utils
+open Base
 include Sigs.Interval with type elem = Z.t
 
 val left : elem -> t

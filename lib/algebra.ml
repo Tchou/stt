@@ -1,4 +1,4 @@
-open Utils
+open Base
 
 (* From:
    https://github.com/dbuenzli/hmap/blob/master/src/hmap.ml
