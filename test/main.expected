@@ -209,7 +209,36 @@ Test: 'Int' (3/3)
              
       
       
+Test: 'Unit' (3/3)
+      Serie: 'Unit.basic': (1/1)
+             
+             'Unit.basic.1': PASSED
+                 expected: true
+                   result: true
+             
+      
+      Serie: 'Unit.union': (2/2)
+             
+             'Unit.union.1': PASSED
+                 expected: Empty
+                   result: Empty
+             'Unit.union.2': PASSED
+                 expected: Unit
+                   result: Unit
+             
+      
+      Serie: 'Unit.inter': (2/2)
+             
+             'Unit.inter.1': PASSED
+                 expected: Unit
+                   result: Unit
+             'Unit.inter.2': PASSED
+                 expected: Empty
+                   result: Empty
+             
+      
+      
 SUMMARY:
-        Series: 10/10
-        Tests: 55/55
+        Series: 13/13
+        Tests: 60/60
         
