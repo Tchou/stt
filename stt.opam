@@ -11,7 +11,7 @@ doc: "https://url/to/documentation"
 bug-reports: "https://github.com/Tchou/stt/issues"
 depends: [
   "ocaml"
-  "dune" {>= "2.8"}
+  "dune" {>= "3.0"}
   "zarith"
   "odoc" {with-doc}
 ]

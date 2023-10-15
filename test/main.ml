@@ -1,4 +1,5 @@
-module Char_test = Char_test
-module Int_test = Int_test
+include Atom_test
+include Char_test
+include Int_test
 
 let () = Test_utils.summary "global"

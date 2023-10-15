@@ -11,8 +11,7 @@ module type TESTABLE = sig
 end
 
 type 'a testable = (module TESTABLE with type t = 'a)
-
-exception Test_error of string * string
+type test_result = (string * string, string * string) result
 
 let check (type t) (module T : TESTABLE with type t = t) (v1 : t) (v2 : t) () =
   let s1 = asprintf "%a" T.pp v1 in

@@ -1,3 +1,84 @@
+Test: 'Atom' (4/4)
+      Serie: 'Atom.is_finite': (4/4)
+             
+             'Atom.is_finite.1': PASSED
+                 expected: true
+                   result: true
+             'Atom.is_finite.2': PASSED
+                 expected: false
+                   result: false
+             'Atom.is_finite.3': PASSED
+                 expected: true
+                   result: true
+             'Atom.is_finite.4': PASSED
+                 expected: false
+                   result: false
+             
+      
+      Serie: 'Atom.neg': (4/4)
+             
+             'Atom.neg.1': PASSED
+                 expected: Atom
+                   result: Atom
+             'Atom.neg.2': PASSED
+                 expected: Empty
+                   result: Empty
+             'Atom.neg.3': PASSED
+                 expected: `A|`B|`C|`D
+                   result: `A|`B|`C|`D
+             'Atom.neg.4': PASSED
+                 expected: Atom\(`A|`B|`C|`D)
+                   result: Atom\(`A|`B|`C|`D)
+             
+      
+      Serie: 'Atom.union': (6/6)
+             
+             'Atom.union.1': PASSED
+                 expected: Empty
+                   result: Empty
+             'Atom.union.2': PASSED
+                 expected: Atom
+                   result: Atom
+             'Atom.union.3': PASSED
+                 expected: Atom
+                   result: Atom
+             'Atom.union.4': PASSED
+                 expected: `A|`B|`C|`D|`E|`F|`G
+                   result: `A|`B|`C|`D|`E|`F|`G
+             'Atom.union.5': PASSED
+                 expected: Atom\(`A|`B)
+                   result: Atom\(`A|`B)
+             'Atom.union.6': PASSED
+                 expected: Atom\(`E|`F|`G)
+                   result: Atom\(`E|`F|`G)
+             
+      
+      Serie: 'Atom.inter': (7/7)
+             
+             'Atom.inter.1': PASSED
+                 expected: Atom
+                   result: Atom
+             'Atom.inter.2': PASSED
+                 expected: Empty
+                   result: Empty
+             'Atom.inter.3': PASSED
+                 expected: Empty
+                   result: Empty
+             'Atom.inter.4': PASSED
+                 expected: `A
+                   result: `A
+             'Atom.inter.5': PASSED
+                 expected: `A|`B
+                   result: `A|`B
+             'Atom.inter.6': PASSED
+                 expected: Atom\(`A|`B|`C|`D|`E|`F|`G)
+                   result: Atom\(`A|`B|`C|`D|`E|`F|`G)
+             'Atom.inter.7': PASSED
+                 expected: `C|`D
+                   result: `C|`D
+             
+      
+      
 Test: 'Char' (3/3)
       Serie: 'Char.union': (5/5)
              
@@ -129,6 +210,6 @@ Test: 'Int' (3/3)
       
       
 SUMMARY:
-        Series: 6/6
-        Tests: 34/34
+        Series: 10/10
+        Tests: 55/55
         

@@ -22,8 +22,14 @@ end
 
 module type Interval = sig
   include Common.T
-  type elem
-  include Set with type t := t and type elem := elem
+  include Set with type t := t
 
   val range : elem -> elem -> t
+end
+
+module type FiniteCofinite = sig
+  include Common.T
+  include Set with type t := t
+
+  val is_finite : t -> bool
 end
