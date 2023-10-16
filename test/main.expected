@@ -79,6 +79,47 @@ Test: 'Atom' (4/4)
              
       
       
+Test: 'Base.Bdd' (2/2)
+      Serie: 'Base.Bdd.union': (4/4)
+             
+             'Base.Bdd.union.1': PASSED
+                 expected: False
+                   result: False
+             'Base.Bdd.union.2': PASSED
+                 expected: True (1,Unit)
+                   result: True (1,Unit)
+             'Base.Bdd.union.3': PASSED
+                 expected: Node (6, "A", False,
+                                 Node (5, "B", False,
+                                       Node (4, "C", False, True (1,Unit))))
+                   result: Node (6, "A", False,
+                                 Node (5, "B", False,
+                                       Node (4, "C", False, True (1,Unit))))
+             'Base.Bdd.union.4': PASSED
+                 expected: Node (5, "B", False,
+                                 Node (4, "C", False, True (1,Unit)))
+                   result: Node (5, "B", False,
+                                 Node (4, "C", False, True (1,Unit)))
+             
+      
+      Serie: 'Base.Bdd.inter': (3/3)
+             
+             'Base.Bdd.inter.1': PASSED
+                 expected: True (1,Unit)
+                   result: True (1,Unit)
+             'Base.Bdd.inter.2': PASSED
+                 expected: False
+                   result: False
+             'Base.Bdd.inter.3': PASSED
+                 expected: Node (6, "A", False,
+                                 Node (5, "B", False,
+                                       Node (4, "C", False, True (1,Unit))))
+                   result: Node (6, "A", False,
+                                 Node (5, "B", False,
+                                       Node (4, "C", False, True (1,Unit))))
+             
+      
+      
 Test: 'Char' (3/3)
       Serie: 'Char.union': (5/5)
              
@@ -239,6 +280,6 @@ Test: 'Unit' (3/3)
       
       
 SUMMARY:
-        Series: 13/13
-        Tests: 60/60
+        Series: 15/15
+        Tests: 67/67
         
