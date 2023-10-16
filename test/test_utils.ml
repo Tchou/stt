@@ -1,4 +1,4 @@
-(* Inspired from Alcotest API
+(* Inspired by Alcotest API
    https://github.com/mirage/alcotest
 *)
 open Format
@@ -10,12 +10,16 @@ module type TESTABLE = sig
   val equal : t -> t -> bool
 end
 
+type printer = formatter -> unit -> unit
+
+let printer s fmt () = pp_print_string fmt s
+
 type 'a testable = (module TESTABLE with type t = 'a)
-type test_result = (string * string, string * string) result
+type test_result = (printer * printer, printer * printer) result
 
 let check (type t) (module T : TESTABLE with type t = t) (v1 : t) (v2 : t) () =
-  let s1 = asprintf "%a" T.pp v1 in
-  let s2 = asprintf "%a" T.pp v2 in
+  let s1 fmt () = T.pp fmt v1 in
+  let s2 fmt () = T.pp fmt v2 in
 
   if T.equal v1 v2 then Ok (s1, s2) else Error (s1, s2)
 
@@ -50,7 +54,8 @@ let do_tests l =
     match test () with
     | Ok (s1, s2) -> ("PASSED", s1, s2, true), 1
     | Error (s1, s2) -> ("FAILED", s1, s2, false), 0
-    | exception e -> ("EXCEPTION", "ERROR", Printexc.to_string e, false), 0
+    | exception e ->
+        ("EXCEPTION", printer "ERROR", printer (Printexc.to_string e), false), 0
   in
   let do_serie name tests =
     let passed, total, lst =
@@ -130,8 +135,8 @@ let run ?(id = "global") name l =
           let id = sprintf "%s.%s.%d" name serie i in
           if not ok then counter.failed_tests <- id :: counter.failed_tests;
           printf "@['%s': %s@\n" id msg;
-          printf "   @[ expected: %s@]@\n" s1;
-          printf "   @[   result: %s@]@\n" s2;
+          printf "   @[ expected: @[%a@]@]@\n" s1 ();
+          printf "   @[   result: @[%a@]@]@\n" s2 ();
           printf "@]")
         tests;
       printf "@]@\n@]@\n")

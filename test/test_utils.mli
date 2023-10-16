@@ -13,7 +13,8 @@ module T : sig
   val bool : (module TESTABLE with type t = bool)
 end
 
-type test_result = (string * string, string * string) result
+type printer = Format.formatter -> unit -> unit
+type test_result = (printer * printer, printer * printer) result
 
 val check : 't testable -> 't -> 't -> unit -> test_result
 val summary : string -> unit

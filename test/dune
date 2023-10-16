@@ -1,4 +1,4 @@
 (test
  (name main)
- (libraries stt zarith)
+ (libraries stt base zarith)
  (empty_module_interface_if_absent))
