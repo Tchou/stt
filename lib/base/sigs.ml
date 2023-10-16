@@ -5,9 +5,9 @@ module type PreSet = sig
   val is_empty : t -> bool
   val any : t
   val is_any : t -> bool
+  val neg : t -> t
   val cup : t -> t -> t
   val cap : t -> t -> t
-  val neg : t -> t
   val diff : t -> t -> t
 end
 
@@ -39,19 +39,15 @@ module type FiniteCofinite = sig
 end
 
 module type Bdd = sig
-  include Common.T
+  include PreSet
 
   type atom
   type leaf
 
-  val empty : t
-  val any : t
-  val is_empty : t -> bool
-  val is_any : t -> bool
+  module Conj : Common.T with type t = (atom list * atom list) * leaf
+  module Disj : Common.T with type t = Conj.t list
+
   val atom : atom -> t
   val leaf : leaf -> t
-  val cup : t -> t -> t
-  val cap : t -> t -> t
-  val diff : t -> t -> t
-  val neg : t -> t
+  val dnf : t -> Conj.t Seq.t
 end

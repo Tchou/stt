@@ -1,7 +1,19 @@
 type ('a, 't) bdd =
   | False
-  | True of int * 't
-  | Node of (int * 'a * ('a, 't) bdd * ('a, 't) bdd)
+  | True of {
+      id : int;
+      leaf : 't;
+    }
+  | Node of {
+      id : int;
+      var : 'a;
+      low : ('a, 't) bdd;
+      hi : ('a, 't) bdd;
+    }
+
+let ignore_first x _ = x
+let ignore_false _ = False
+let ignore_false2 _ _ = False
 
 module Make (X : Common.T) (L : Sigs.PreSet) = struct
   type atom = X.t
@@ -9,20 +21,15 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
   type t = (atom, leaf) bdd
 
   let equal t1 t2 = t1 == t2
-
-  let hash = function
-    | False -> 0
-    | True (id, _) -> id
-    | Node (id, _, _, _) -> id
-
+  let hash = function False -> 0 | True { id; _ } -> id | Node { id; _ } -> id
   let compare t1 t2 = compare (hash t1) (hash t2)
 
   let rec pp fmt t =
     let open Format in
     match t with
     | False -> fprintf fmt "@[False@]"
-    | True (id, l) -> fprintf fmt "@[True (%d,@[%a@])@]" id L.pp l
-    | Node (id, var, low, hi) ->
+    | True { id; leaf } -> fprintf fmt "@[True (%d,@[%a@])@]" id L.pp leaf
+    | Node { id; var; low; hi } ->
         fprintf fmt "@[Node (@[%d,@ @[%a@],@ @[%a@],@ @[%a@]@])@]" id X.pp var
           pp low pp hi
 
@@ -35,15 +42,15 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
       ||
       match b1, b2 with
       | False, False -> true
-      | True (_, l1), True (_, l2) -> L.equal l1 l2
-      | Node (_, var1, low1, hi1), Node (_, var2, low2, hi2) ->
-          X.equal var1 var2 && equal low1 low2 && equal hi1 hi2
+      | True r1, True r2 -> L.equal r1.leaf r2.leaf
+      | Node n1, Node n2 ->
+          X.equal n1.var n2.var && equal n1.low n2.low && equal n1.hi n2.hi
       | _ -> false
 
     let hash = function
       | False -> 0
-      | True (_, l) -> L.hash l
-      | Node (_, var, low, hi) ->
+      | True { leaf; _ } -> L.hash leaf
+      | Node { var; low; hi; _ } ->
           let hl = hash low in
           let hh = hash hi in
           X.hash var + ((hl lsl 4) + hl) + ((hh lsl 16) + hl)
@@ -52,10 +59,10 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
   let memo_node = HNode.create 16
   let uid = ref 1
 
-  let true_ t =
-    if L.is_empty t then False
+  let true_ leaf =
+    if L.is_empty leaf then False
     else
-      let n = True (!uid, t) in
+      let n = True { id = !uid; leaf } in
       try HNode.find memo_node n with
       | Not_found ->
           HNode.add memo_node n n;
@@ -65,7 +72,7 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
   let node var ~low ~hi =
     if low == hi then low
     else
-      let n = Node (!uid, var, low, hi) in
+      let n = Node { id = !uid; var; low; hi } in
       try HNode.find memo_node n with
       | Not_found ->
           HNode.add memo_node n n;
@@ -75,45 +82,78 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
   let empty = False
   let is_empty = function False -> true | _ -> false
   let any = true_ L.any
-  let is_any = function True (_, l) -> L.is_any l | _ -> false
+  let is_any = function True { leaf; _ } -> L.is_any leaf | _ -> false
   let atom x = node x ~low:empty ~hi:any
   let leaf l = true_ l
 
   let rec neg = function
     | False -> any
-    | True (_, t) -> true_ (L.neg t)
-    | Node (_, var, low, hi) -> node var ~low:(neg low) ~hi:(neg hi)
+    | True { leaf; _ } -> true_ (L.neg leaf)
+    | Node { var; low; hi; _ } -> node var ~low:(neg low) ~hi:(neg hi)
 
-  let rec apply base_eq base_f_o base_o_f base_t_t t1 t2 =
-    if t1 == t2 then base_eq t1 t2
+  type operation = {
+    eq : t -> t -> t;
+    f_o : t -> t;
+    o_f : t -> t;
+    t_t : leaf -> leaf -> leaf;
+  }
+
+  let rec apply op t1 t2 =
+    if t1 == t2 then op.eq t1 t2
     else
       match t1, t2 with
-      | False, _ -> base_f_o t2
-      | _, False -> base_o_f t1
-      | True (_, l1), True (_, l2) -> true_ (base_t_t l1 l2)
-      | Node (_, var, low, hi), (True _ as t)
-       |(True _ as t), Node (_, var, low, hi) ->
-          node var
-            ~low:(apply base_eq base_f_o base_o_f base_t_t low t)
-            ~hi:(apply base_eq base_f_o base_o_f base_t_t hi t)
-      | Node (_, var1, low1, hi1), Node (_, var2, low2, hi2) ->
-          let c = X.compare var1 var2 in
-          if c = 0 then
-            node var1
-              ~low:(apply base_eq base_f_o base_o_f base_t_t low1 low2)
-              ~hi:(apply base_eq base_f_o base_o_f base_t_t hi1 hi2)
-          else if c < 0 then
-            node var1
-              ~low:(apply base_eq base_f_o base_o_f base_t_t low1 t2)
-              ~hi:(apply base_eq base_f_o base_o_f base_t_t hi1 t2)
-          else
-            node var2
-              ~low:(apply base_eq base_f_o base_o_f base_t_t t1 low2)
-              ~hi:(apply base_eq base_f_o base_o_f base_t_t t1 hi2)
+      | False, _ -> op.f_o t2
+      | _, False -> op.o_f t1
+      | True r1, True r2 -> true_ (op.t_t r1.leaf r2.leaf)
+      | Node { var; low; hi; _ }, (True _ as t)
+       |(True _ as t), Node { var; low; hi; _ } ->
+          let low = apply op low t in
+          let hi = apply op hi t in
+          node var ~low ~hi
+      | Node r1, Node r2 ->
+          let c = X.compare r1.var r2.var in
+          let var, l1, l2, h1, h2 =
+            if c = 0 then r1.var, r1.low, r2.low, r1.hi, r2.hi
+            else if c > 0 then r2.var, t1, r2.low, t1, r2.hi
+            else r1.var, r1.low, t2, r1.hi, t2
+          in
+          let low = apply op l1 l2 in
+          let hi = apply op h1 h2 in
+          node var ~low ~hi
 
-  let ignore_false _ = False
-  let ignore_false2 _ _ = False
-  let cup = apply (fun t1 _ -> t1) Fun.id Fun.id L.cup
-  let cap = apply (fun t1 _ -> t1) ignore_false ignore_false L.cap
-  let diff = apply ignore_false2 ignore_false Fun.id L.diff
+  let cup t1 t2 =
+    apply { eq = ignore_first; f_o = Fun.id; o_f = Fun.id; t_t = L.cup } t1 t2
+
+  let cap t1 t2 =
+    apply
+      { eq = ignore_first; f_o = ignore_false; o_f = ignore_false; t_t = L.cap }
+      t1 t2
+
+  let diff =
+    apply { eq = ignore_false2; f_o = ignore_false; o_f = Fun.id; t_t = L.diff }
+
+  let memoize f arg =
+    let r = ref (fun () -> assert false) in
+    (r :=
+       fun () ->
+         let res = f arg in
+         (r := fun () -> res);
+         res);
+    fun () -> !r ()
+
+  open Common
+  module Conj = Pair (Pair (List (X)) (List (X))) (L)
+  module Disj = List (Conj)
+
+  let dnf t =
+    let rec loop todo =
+      match todo with
+      | [] -> Seq.Nil
+      | (_, _, False) :: todo -> loop todo
+      | (pos, neg, True { leaf; _ }) :: todo ->
+          Cons (((pos, neg), leaf), memoize loop todo)
+      | (pos, neg, Node { var; low; hi; _ }) :: todo ->
+          loop ((var :: pos, neg, hi) :: (pos, var :: neg, low) :: todo)
+    in
+    memoize loop [ [], [], t ]
 end

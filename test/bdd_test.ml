@@ -16,8 +16,15 @@ let c = B.atom "C"
 let bc = B.cap b c
 let abc = B.(cap a (cap b c))
 let nabc = B.(cap (neg a) (cap b c))
+let a_b = B.(cup a b)
+let b_c = B.(cup b c)
+let a_nc = B.(cup a (neg c))
+let comb1 = B.(cap a_b (cap b_c a_nc))
+let dnf1 = B.dnf comb1
+let ldnf1 = List.of_seq dnf1
 
 let () =
+  let checkd = check (module B.Disj) in
   let check = check (module B) in
   let open B in
   run "Base.Bdd"
@@ -34,5 +41,7 @@ let () =
           check any (cap any any);
           check empty (cap any empty);
           check abc (cap bc abc);
+          check empty comb1;
         ] );
+      "dnf", [ checkd ldnf1 ldnf1 ];
     ]

@@ -33,7 +33,17 @@ module Pair (X : T) (Y : T) : T with type t = X.t * Y.t = struct
   let pp fmt (x, y) = Format.fprintf fmt "(%a, %a)" X.pp x Y.pp y
 end
 
-module List (X : T) : T with type t = X.t list = struct
+module List (X : T) : sig
+  include T with type t = X.t list
+
+  val pp_ :
+    ?sep:(Format.formatter -> unit -> unit) ->
+    ?op:(Format.formatter -> unit -> unit) ->
+    ?cl:(Format.formatter -> unit -> unit) ->
+    Format.formatter ->
+    t ->
+    unit
+end = struct
   type t = X.t list
 
   let rec compare l1 l2 =
@@ -59,9 +69,15 @@ module List (X : T) : T with type t = X.t list = struct
     in
     loop l 0
 
-  let pp fmt l =
-    let open Format in
-    fprintf fmt "%a"
-      (pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "; ") X.pp)
-      l
+  open Format
+
+  let pp_
+      ?(sep = fun fmt () -> fprintf fmt "; ")
+      ?(op = fun fmt () -> fprintf fmt "[")
+      ?(cl = fun fmt () -> fprintf fmt "]")
+      fmt
+      l =
+    fprintf fmt "%a%a%a" op () (pp_print_list ~pp_sep:sep X.pp) l cl ()
+
+  let pp fmt l = pp_ fmt l
 end
