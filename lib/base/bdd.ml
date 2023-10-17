@@ -11,6 +11,27 @@ type ('a, 't) bdd =
       hi : ('a, 't) bdd;
     }
 
+let memoize f arg =
+  let r = ref (fun () -> assert false) in
+  (r :=
+     fun () ->
+       let res = f arg in
+       (r := fun () -> res);
+       res);
+  fun () -> !r ()
+
+let dnf_gen build_seq t =
+  let rec loop todo =
+    match todo with
+    | [] -> Seq.Nil
+    | (_, _, False) :: todo -> loop todo
+    | (pos, neg, True { leaf; _ }) :: todo ->
+        build_seq (pos, neg) leaf (memoize loop todo)
+    | (pos, neg, Node { var; low; hi; _ }) :: todo ->
+        loop ((var :: pos, neg, hi) :: (pos, var :: neg, low) :: todo)
+  in
+  memoize loop [ [], [], t ]
+
 let ignore_first x _ = x
 let ignore_false _ = False
 let ignore_false2 _ _ = False
@@ -132,28 +153,27 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
   let diff =
     apply { eq = ignore_false2; f_o = ignore_false; o_f = Fun.id; t_t = L.diff }
 
-  let memoize f arg =
-    let r = ref (fun () -> assert false) in
-    (r :=
-       fun () ->
-         let res = f arg in
-         (r := fun () -> res);
-         res);
-    fun () -> !r ()
-
   open Common
   module Conj = Pair (Pair (List (X)) (List (X))) (L)
   module Disj = List (Conj)
 
   let dnf t =
-    let rec loop todo =
-      match todo with
-      | [] -> Seq.Nil
-      | (_, _, False) :: todo -> loop todo
-      | (pos, neg, True { leaf; _ }) :: todo ->
-          Cons (((pos, neg), leaf), memoize loop todo)
-      | (pos, neg, Node { var; low; hi; _ }) :: todo ->
-          loop ((var :: pos, neg, hi) :: (pos, var :: neg, low) :: todo)
+    dnf_gen (fun (pos, neg) leaf seq -> Cons (((pos, neg), leaf), seq)) t
+end
+
+module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
+  include Make (X) (L)
+
+  let full_dnf (t : t) =
+    let rec loop_leaf x_atoms leaf_seq cont () =
+      match leaf_seq () with
+      | Seq.Nil -> loop cont ()
+      | Seq.Cons ((l_atoms, _), lleaf_seq) ->
+          Seq.Cons ((x_atoms, l_atoms), loop_leaf x_atoms lleaf_seq cont)
+    and loop cont =
+      match cont () with
+      | Seq.Nil -> Seq.empty
+      | Cons ((x_atoms, leaf), ccont) -> loop_leaf x_atoms (L.dnf leaf) ccont
     in
-    memoize loop [ [], [], t ]
+    loop (dnf t)
 end
