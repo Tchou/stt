@@ -20,8 +20,15 @@ let a_b = B.(cup a b)
 let b_c = B.(cup b c)
 let a_nc = B.(cup a (neg c))
 let comb1 = B.(cap a_b (cap b_c a_nc))
+
+let comb1_alt =
+  let open B in
+  List.fold_left cup empty
+    [ cap a b; cap (neg b) (cap c a); cap b (cap (neg c) (neg a)) ]
+
 let dnf1 = B.dnf comb1
 let ldnf1 = List.of_seq dnf1
+let ldnf1_alt = List.of_seq (B.dnf comb1_alt)
 
 let () =
   let checkd = check (module B.Disj) in
@@ -41,7 +48,7 @@ let () =
           check any (cap any any);
           check empty (cap any empty);
           check abc (cap bc abc);
-          check empty comb1;
+          check comb1_alt comb1;
         ] );
-      "dnf", [ checkd ldnf1 ldnf1 ];
+      "dnf", [ checkd ldnf1_alt ldnf1 ];
     ]
