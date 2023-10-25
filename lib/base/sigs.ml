@@ -51,3 +51,10 @@ module type Bdd = sig
   val leaf : leaf -> t
   val dnf : t -> Conj.t Seq.t
 end
+
+module type Bdd2 = sig
+  module Leaf : Bdd
+  include Bdd with type leaf = Leaf.t
+  val full_dnf :
+    t -> ((atom list * atom list) * (Leaf.atom list * Leaf.atom list)) Seq.t
+end

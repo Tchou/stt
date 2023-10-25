@@ -173,8 +173,9 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
 end
 
 module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
-  include Make (X) (L)
-
+  module Leaf = L
+  include Make (X) (Leaf)
+  
 
   let expand_dnf (x_atoms, leaf) =
     let l_dnf = L.dnf leaf in

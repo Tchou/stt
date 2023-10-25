@@ -23,7 +23,9 @@ type 'a node = {
   mutable descr : 'a;
   id : int;
 }
-module type VarBdd = Sigs.Bdd with type atom = Var.t
+module type Basic = Sigs.Bdd with type atom = Var.t
+module type Constr = Base.Sigs.Bdd2 with type atom = Var.t
+
 module VarAtom = Bdd.Make (Var) (Atom)
 module VarInt = Bdd.Make (Var) (Int)
 module VarChar = Bdd.Make (Var) (Char)
@@ -94,8 +96,11 @@ end
 and Product : (Sigs.Bdd with type atom = Node.t * Node.t) =
   Bdd.Make (Common.Pair (Node) (Node)) (Unit)
 
-and VarProduct : (Sigs.Bdd with type atom = Var.t and type leaf = Product.t) =
-  Bdd.Make (Var) (Product)
+and VarProduct : Sigs.Bdd2 with type atom = Var.t
+                            and type Leaf.t = Product.t
+                            and type Leaf.atom = Product.atom
+                            and type Leaf.leaf = Product.leaf
+  =  Bdd.MakeLevel2 (Var) (Product)
 
 include Descr
 
@@ -128,7 +133,9 @@ let node t = incr node_uid; { id = !node_uid; descr = t }
 
 let make () = node empty
 
-let def n t = n.descr <- t
+let def n t = 
+  assert (n.descr == empty);
+  n.descr <- t
 
 let var_product n1 n2 =
   VarProduct.(leaf (Product.atom (n1, n2)))
@@ -173,3 +180,20 @@ let neg t = {
   product = VarProduct.neg t.product;
   arrow = VarProduct.neg t.arrow
 }
+
+let bdd_has_var (type a) (module M : Base.Sigs.Bdd with type t = a and type atom = Var.t) (v:a) =
+  let dnf = M.dnf v in
+  let rec loop s =
+    match s () with
+      Seq.Nil -> false
+    | Seq.Cons((([], []), _), rest) -> loop rest
+    | _ -> true
+  in
+  loop dnf
+let has_toplevel_var (t : t) =
+  bdd_has_var (module VarInt) t.int
+  || bdd_has_var (module VarAtom) t.atom
+  || bdd_has_var (module VarChar) t.char
+  || bdd_has_var (module VarUnit) t.unit
+  || bdd_has_var (module VarProduct) t.product
+  || bdd_has_var (module VarProduct) t.arrow
