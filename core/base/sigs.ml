@@ -1,3 +1,11 @@
+module type Hcons = sig
+  type v
+  include Common.T
+  val make : v -> t
+  val id : t -> int
+  val (!!) : t -> v
+end
+
 module type PreSet = sig
   include Common.T
 

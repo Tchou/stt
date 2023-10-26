@@ -1,0 +1,11 @@
+(library
+ (public_name stt.parsing)
+ (name parsing)
+ (libraries zarith stt menhirLib sedlex)
+ (preprocess
+  (pps sedlex.ppx)))
+
+(menhir
+ (modules parser)
+ (merge_into parser)
+ (flags --explain --table))

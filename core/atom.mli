@@ -1,0 +1,1 @@
+include Base.Sigs.FiniteCofinite with type elem = Base.Hstring.t

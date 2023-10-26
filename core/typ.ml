@@ -8,7 +8,7 @@ type ('atom, 'int, 'char, 'unit, 'product, 'arrow) descr = {
   product : 'product;
   arrow : 'arrow;
 }
-module Get = 
+module Get =
 struct
   let atom t = t.atom
   let int t = t.int
@@ -17,7 +17,15 @@ struct
   let product t = t.product
   let arrow t = t.arrow
 end
-
+module Set =
+struct
+  let atom t atom = { t with atom }
+  let int t int = { t with int }
+  let char t char = { t with char }
+  let unit t unit = { t with unit }
+  let product t product = { t with product }
+  let arrow t arrow = { t with arrow }
+end
 
 type 'a node = {
   mutable descr : 'a;
@@ -133,7 +141,7 @@ let node t = incr node_uid; { id = !node_uid; descr = t }
 
 let make () = node empty
 
-let def n t = 
+let def n t =
   assert (n.descr == empty);
   n.descr <- t
 
@@ -190,7 +198,7 @@ let bdd_has_var (type a) (module M : Base.Sigs.Bdd with type t = a and type atom
     | _ -> true
   in
   loop dnf
-let has_toplevel_var (t : t) =
+let _has_toplevel_var (t : t) =
   bdd_has_var (module VarInt) t.int
   || bdd_has_var (module VarAtom) t.atom
   || bdd_has_var (module VarChar) t.char

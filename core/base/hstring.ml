@@ -1,0 +1,1 @@
+include Hcons.Make(Common.String)

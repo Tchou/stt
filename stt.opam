@@ -11,8 +11,11 @@ doc: "https://url/to/documentation"
 bug-reports: "https://github.com/Tchou/stt/issues"
 depends: [
   "ocaml"
-  "dune" {>= "3.0"}
+  "dune" {>= "3.7"}
   "zarith"
+  "menhir"
+  "menhirLib"
+  "sedlex"
   "odoc" {with-doc}
 ]
 build: [

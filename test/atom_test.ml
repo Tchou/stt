@@ -2,7 +2,7 @@ open Test_utils
 open Stt
 
 let ( !$ ) =
-  List.fold_left (fun acc i -> Atom.(cup acc (singleton i))) Atom.empty
+  List.fold_left (fun acc i -> Atom.(cup acc (singleton (Base.Hstring.make i)))) Atom.empty
 
 let l1 = !$[ "A"; "B"; "C"; "D" ]
 let l2 = !$[ "A"; "B"; "E"; "F"; "G" ]

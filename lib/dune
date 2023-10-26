@@ -1,4 +1,0 @@
-(library
- (public_name stt)
- (name stt)
- (libraries zarith base))

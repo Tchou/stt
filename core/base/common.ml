@@ -81,3 +81,10 @@ end = struct
 
   let pp fmt l = pp_ fmt l
 end
+
+module String =
+struct
+  include Stdlib.String
+  let hash s = Hashtbl.hash s
+  let pp = Format.pp_print_string 
+end

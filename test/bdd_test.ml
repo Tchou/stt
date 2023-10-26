@@ -1,7 +1,7 @@
 open Test_utils
 
 module B =
-  Base.Bdd.Make
+  Stt.Base.Bdd.Make
     (struct
       include String
 

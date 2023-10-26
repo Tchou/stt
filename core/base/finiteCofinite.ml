@@ -3,11 +3,11 @@ module Make (X : Common.T) : sig
 
   include
     Sigs.FiniteCofinite
-      with type elem = X.t
-       and type t =
-        [ `Finite of S.t
-        | `Cofinite of S.t
-        ]
+    with type elem = X.t
+     and type t =
+           [ `Finite of S.t
+           | `Cofinite of S.t
+           ]
 end = struct
   module S = Set.Make (X)
 
@@ -36,8 +36,8 @@ end = struct
     let h =
       S.fold
         (fun e acc ->
-          let h = X.hash e in
-          (h lsl 4) + h + acc)
+           let h = X.hash e in
+           (h lsl 4) + h + acc)
         s 0
     in
     (if c then (h lsl 13) - h else h) land max_int
