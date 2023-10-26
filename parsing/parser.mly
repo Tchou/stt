@@ -22,8 +22,8 @@
 
 %{
 open Ast
-let mk_loc p1 p2 descr =
-    { info = (p1, p2); descr }
+let mk_loc sloc descr =
+    { info = sloc; descr }
 
 let copy_loc e descr =
     { e with descr }
@@ -33,14 +33,14 @@ let typ_nil = Typ Stt.(Typ.Singleton.atom (Base.Hstring.make "nil"))
 let typ_unit = Typ Stt.Typ.Singleton.unit
 
 
-let cup_re p1 p2 r1 r2 =
+let cup_re sloc r1 r2 =
     match r1.descr, r2.descr with
-        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc p1 p2 (Cup (t1, t2)))
+        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc sloc (Cup (t1, t2)))
         | _ -> Re_alt (r1, r2)
 
-let from_re name cons p1 p2 r1 r2 =
+let from_re name cons sloc r1 r2 =
     match r1.descr, r2.descr with
-        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc p1 p2 (cons t1 t2))
+        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc sloc (cons t1 t2))
         | _ -> parse_error ("Cannot mix " ^ name ^ " and regular expression")
 
 let arrow_re = from_re "arrow" (fun t1 t2 -> Arrow (t1, t2))
@@ -55,7 +55,7 @@ let prod_re = from_re "product" (fun t1 t2 -> Pair (t1, t2))
 %%
 
 %inline located (expr):
-e = expr { mk_loc $symbolstartpos $endpos e  }
+e = expr { mk_loc $sloc e  }
 
 
 typ:
@@ -139,7 +139,7 @@ re:
 
 re_:
 re1 = or_re; "->"; re2 = re {
-    arrow_re $symbolstartpos $endpos re1 re2
+    arrow_re $sloc re1 re2
 }
 | re = or_re { re.descr }
 
@@ -148,7 +148,7 @@ or_re:
 
 or_re_:
 re1 = concat_re; "|"; re2 = or_re {
-    cup_re $symbolstartpos $endpos re1 re2
+    cup_re $sloc re1 re2
 }
 | re = concat_re { re.descr }
 
@@ -164,10 +164,10 @@ and_re:
 
 and_re_:
 re1 = and_re; "&"; re2 = simple_re {
-    cap_re $symbolstartpos $endpos re1 re2
+    cap_re $sloc re1 re2
 }
 | re1 = and_re; "\\"; re2 = simple_re {
-    diff_re $symbolstartpos $endpos re1 re2
+    diff_re $sloc re1 re2
 }
 | re = simple_re { re.descr }
 
@@ -181,7 +181,7 @@ simple_re_:
 |   re = simple_re; "?"            { Re_alt ((copy_loc re Re_epsilon), re) }
 |   "("; o = option (pair(re, option(preceded (",", re )))); ")"  {
         match o with
-          None -> Re_typ (mk_loc $symbolstartpos $endpos typ_unit)
+          None -> Re_typ (mk_loc $sloc typ_unit)
         | Some (re, None) -> re.descr
-        | Some (re1, Some re2) -> prod_re $symbolstartpos $endpos re1 re2
+        | Some (re1, Some re2) -> prod_re $sloc re1 re2
 }
