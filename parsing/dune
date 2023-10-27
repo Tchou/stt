@@ -6,6 +6,10 @@
   (pps sedlex.ppx)))
 
 (menhir
- (modules parser)
+ (modules tokens)
+ (flags --only-tokens))
+
+(menhir
+ (modules parser tokens)
  (merge_into parser)
- (flags --explain --table))
+ (flags --table --external-tokens Tokens))

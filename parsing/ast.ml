@@ -30,3 +30,7 @@ and 'info re_ =
   | Re_concat of 'info re * 'info re
 
 and 'info re = ('info, 'info re_) node
+
+type 'info typ_decl = { name : 'info lident;
+                        params : 'info lident list;
+                        expr : 'info typ_expr }
