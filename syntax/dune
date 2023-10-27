@@ -1,6 +1,6 @@
 (library
- (public_name stt.parsing)
- (name parsing)
+ (public_name stt.syntax)
+ (name syntax)
  (libraries zarith stt menhirLib sedlex)
  (preprocess
   (pps sedlex.ppx)))

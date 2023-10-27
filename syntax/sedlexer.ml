@@ -52,6 +52,7 @@ let rec lexer lexbuf =
   | "*" -> STAR
   | "+" -> PLUS
   | "?" -> QMARK
+  | "=" -> EQUAL
 
   (* Constants *)
   | digit  -> INT (Z.of_string (Utf8.lexeme lexbuf))
@@ -85,3 +86,13 @@ let rec lexer lexbuf =
   | _ -> lexical_error
         (Sedlexing.lexing_positions lexbuf)
         "Unexpected character '%s'" (Utf8.lexeme lexbuf)
+
+
+let lexer =
+  let queue = ref None in
+  fun lexbuf ->
+    match !queue with
+    Some token -> queue := None; token
+    | None -> match lexer lexbuf with
+            TYPE -> queue := Some TYPE; EOF
+            | token -> token

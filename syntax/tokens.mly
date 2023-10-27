@@ -21,5 +21,4 @@
 %token LSB "["
 %token RSB "]"
 %token EOF
-
 %%

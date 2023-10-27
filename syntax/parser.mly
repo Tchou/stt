@@ -35,6 +35,7 @@ let prod_re = from_re "product" (fun t1 t2 -> Pair (t1, t2))
 
 %start < _ typ_decl list> typ_decl_list
 %start < _ typ_decl> typ_decl
+%start < _ typ_decl> single_typ_decl
 %start < _ typ_expr> typ_expr
 
 %%
@@ -49,14 +50,17 @@ let prod_re = from_re "product" (fun t1 t2 -> Pair (t1, t2))
 /* Entry points */
 
 typ_decl_list:
-l = list (typ_decl_elem) EOF { l }
+l = list (typ_decl_elem); EOF { l }
 ;
 typ_decl:
-t = typ_decl_elem EOF { t }
+t = typ_decl_elem; EOF { t }
 ;
 
+single_typ_decl:
+option(EOF); t = typ_decl_elem; EOF { t }
+
 typ_expr:
-t = arrow_typ EOF { t }
+t = arrow_typ; EOF { t }
 ;
 
 /* Declarations */
