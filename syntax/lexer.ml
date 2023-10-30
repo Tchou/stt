@@ -11,6 +11,11 @@ let keywords =
   |> List.to_seq
   |> Hashtbl.of_seq
 
+let start_of_phrase_keyword =
+  [ (TYPE, true )]
+  |> List.to_seq
+  |> Hashtbl.of_seq
+
 let ident_or_keyword s =
   try Hashtbl.find keywords s with Not_found -> IDENT (hstr s)
 
@@ -24,17 +29,23 @@ let normal_char =
                | 0x55 .. 0x7e
                | 0xa0 .. 0x1ffff (* non control chars *)
   ]
+
+let symbol_char = [%sedlex.regexp? Chars " ()[]|&-+~\\,;*+?=>"]
 let unicode_esc_char = [%sedlex.regexp?
     "\\u{", Rep(hexdigit,2 .. 6),'}' (* unicode escape *)
 ]
-let ident = [%sedlex.regexp? (xml_letter | '_'), Star (xml_letter | '_' | xml_digit)]
+let ident2 = [%sedlex.regexp? (xml_letter | '_' | xml_digit) ]
+
+(* char of identifers after the first one *)
+let ident = [%sedlex.regexp? (xml_letter | '_'), Star ident2]
 
 let rec lexer lexbuf =
   let open Sedlexing in
   match%sedlex lexbuf with
-  (* Whitespaces *)
+  (* Whitespaces and phrase separators *)
   | ' ' | '\t' | '\r' -> lexer lexbuf
   | '\n' -> new_line lexbuf; lexer lexbuf
+  | ";;" -> EOP
 
   (* Symbols *)
   | "->" -> MINUSGT
@@ -66,7 +77,7 @@ let rec lexer lexbuf =
   | "'\\\\'" -> CHAR (Uchar.of_char '\\')
   | "'\\''" -> CHAR (Uchar.of_char '\'')
   | "'\\b'" -> CHAR (Uchar.of_char '\b')
-  | '\'', normal_char, Plus(normal_char),'\'' ->
+  | '\'', normal_char, Plus(Sub(Compl(ident2),symbol_char)),'\'' ->
     lexical_error
       (Sedlexing.lexing_positions lexbuf)
       "Caracter litteral %s contains more than one code point" (Utf8.lexeme lexbuf)
@@ -84,15 +95,16 @@ let rec lexer lexbuf =
   (* EOF and Unknown *)
   | eof -> EOF
   | _ -> lexical_error
-        (Sedlexing.lexing_positions lexbuf)
-        "Unexpected character '%s'" (Utf8.lexeme lexbuf)
-
+           (Sedlexing.lexing_positions lexbuf)
+           "Unexpected character '%s'" (Utf8.lexeme lexbuf)
 
 let lexer =
   let queue = ref None in
   fun lexbuf ->
     match !queue with
-    Some token -> queue := None; token
-    | None -> match lexer lexbuf with
-            TYPE -> queue := Some TYPE; EOF
-            | token -> token
+      Some token -> queue := None; token
+    | None ->
+      let token = lexer lexbuf in
+      if Hashtbl.mem start_of_phrase_keyword token then begin
+        queue := Some token; EOP
+      end else token

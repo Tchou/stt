@@ -54,8 +54,8 @@ end = struct
       | [], _ -> -1
       | _, [] -> 1
       | x1 :: ll1, x2 :: ll2 ->
-          let c = X.compare x1 x2 in
-          if c <> 0 then c else compare ll1 ll2
+        let c = X.compare x1 x2 in
+        if c <> 0 then c else compare ll1 ll2
 
   let equal l1 l2 = 0 = compare l1 l2
 
@@ -64,8 +64,8 @@ end = struct
       match l with
       | [] -> acc
       | x :: ll ->
-          let x = X.hash x in
-          loop ll (acc + ((x lsl 7) - x))
+        let x = X.hash x in
+        loop ll (acc + ((x lsl 7) - x))
     in
     loop l 0
 
@@ -86,5 +86,12 @@ module String =
 struct
   include Stdlib.String
   let hash s = Hashtbl.hash s
-  let pp = Format.pp_print_string 
+  let pp = Format.pp_print_string
+end
+
+module Bool =
+struct
+  include Stdlib.Bool
+  let hash = function false -> 0 | true -> 1
+  let pp = Format.pp_print_bool
 end

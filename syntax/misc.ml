@@ -8,6 +8,7 @@ let token_to_string t =
   | COMMA -> "COMMA"
   | DIFF -> "DIFF"
   | EOF -> "EOF"
+  | EOP -> "EOP"
   | EQUAL -> "EQUAL"
   | IDENT (s) -> asprintf "IDENT (%s)" Stt.Base.Hstring.(!!s)
   | INT (z) -> asprintf "INT (%s)" (Z.to_string z)

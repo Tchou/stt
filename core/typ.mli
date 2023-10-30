@@ -4,6 +4,8 @@
 (** {1:basic Basics} *)
 
 type t
+type descr = t
+
 (** [t] represents a set-theoretic type. It is the disjoint unions
     of the various kinds defined below. Basic operations of the signature
     {!Base.Common.T} are implemented. Note :
@@ -12,7 +14,10 @@ type t
       not semantic equality
     - {!pp} prints the internal representation of the type and is not a pretty-printer.
 
+  [descr] is an alias for [t] that is used in nested modules below that also define their
+  own type [t] (e.g. {!Basic}).
 *)
+
 
 include Base.Common.T with type t := t
 
@@ -35,8 +40,16 @@ module Node : Base.Common.T
     is a BDD whose atoms are type constructors : products, arrows, and so on.
 *)
 
-module type Basic = Base.Sigs.Bdd with type atom = Var.t
-module type Constr = Base.Sigs.Bdd2 with type atom = Var.t
+module type Basic = sig
+    include Base.Sigs.Bdd with type atom = Var.t
+    val get : descr -> t
+    val set : t -> descr -> descr
+end
+module type Constr = sig
+    include Base.Sigs.Bdd2 with type atom = Var.t
+    val get : descr -> t
+    val set : t -> descr -> descr
+end
 
 (** {2:basic-comp Basic components}*)
 
@@ -53,6 +66,7 @@ module Product : Base.Sigs.Bdd with type atom = Node.t * Node.t
     a products *)
 
 module VarProduct : Constr with module Leaf = Product
+module VarArrow : Constr with module Leaf = Product
 (** The constr components. Arrows have the same internal representation as
     products but a different interpretation.*)
 
@@ -81,22 +95,22 @@ end
 (** Allows one to retrieve the component of a type as a BDD. *)
 
 module Set : sig
-  val atom : t -> VarAtom.t -> t
+  val atom : VarAtom.t -> t -> t
   (** [atom t] updates the atom component of a type [t]. *)
 
-  val int : t -> VarInt.t -> t
+  val int : VarInt.t -> t -> t
   (** [int t] updates the integer component of a type [t]. *)
 
-  val char : t -> VarChar.t -> t
+  val char : VarChar.t -> t -> t
   (** [char t] updates the char component of a type [t]. *)
 
-  val unit : t -> VarUnit.t -> t
+  val unit : VarUnit.t -> t -> t
   (** [unit t] updates the unit component of a type [t]. *)
 
-  val product : t -> VarProduct.t -> t
+  val product : VarProduct.t -> t -> t
   (** [product t] updates the product component of a type [t]. *)
 
-  val arrow : t -> VarProduct.t -> t
+  val arrow : VarProduct.t -> t -> t
   (** [arrow t] updates the arrow component of a type [t]. *)
 end
 (** Allows one to update the component of a type with a BDD. *)
@@ -143,6 +157,9 @@ end
 
 val node : t -> Node.t
 (** [node t] creates a reference to the type [t]. *)
+
+val descr : Node.t -> t
+(** [descr n] dereferences the node [n]. *)
 
 val make : unit -> Node.t
 (** [make ()] creates an unassigned type reference. *)

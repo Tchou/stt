@@ -20,5 +20,5 @@
 %token RP ")"
 %token LSB "["
 %token RSB "]"
-%token EOF
+%token EOF EOP /* end of : file, phrase */
 %%

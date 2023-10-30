@@ -170,12 +170,26 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
     in
     memoize loop [ [], [], t ]
 
+  let leaf_ t = leaf t
+  let rec map ~(atom:(atom -> (atom, leaf) bdd))
+      ~(leaf:leaf -> leaf) t =
+    match t with
+      False -> False
+    | True r -> leaf_ (leaf r.leaf)
+    | Node {var;low;hi;_} ->
+      (* var & hi  | (not var) & low) *)
+      (* TODO short_circuit w.r.t the result *)
+      let res = atom var in
+      let hi_res = map ~atom ~leaf hi in
+      let low_res = map ~atom ~leaf low in
+      cup (cap hi_res res) (diff low_res res)
+
 end
 
 module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
   module Leaf = L
   include Make (X) (Leaf)
-  
+
 
   let expand_dnf (x_atoms, leaf) =
     let l_dnf = L.dnf leaf in

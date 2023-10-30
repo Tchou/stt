@@ -1,6 +1,6 @@
 open Base
 
-type ('atom, 'int, 'char, 'unit, 'product, 'arrow) descr = {
+type ('atom, 'int, 'char, 'unit, 'product, 'arrow) descr_ = {
   atom : 'atom;
   int : 'int;
   char : 'char;
@@ -19,25 +19,42 @@ struct
 end
 module Set =
 struct
-  let atom t atom = { t with atom }
-  let int t int = { t with int }
-  let char t char = { t with char }
-  let unit t unit = { t with unit }
-  let product t product = { t with product }
-  let arrow t arrow = { t with arrow }
+  let atom atom t = { t with atom }
+  let int int t = { t with int }
+  let char char t = { t with char }
+  let unit unit t = { t with unit }
+  let product product t = { t with product }
+  let arrow arrow t   = { t with arrow }
 end
 
 type 'a node = {
   mutable descr : 'a;
   id : int;
 }
-module type Basic = Sigs.Bdd with type atom = Var.t
-module type Constr = Base.Sigs.Bdd2 with type atom = Var.t
+module VarAtom =
+struct
+  include Bdd.Make (Var) (Atom)
+  let get = Get.atom
+  let set = Set.atom
+end
 
-module VarAtom = Bdd.Make (Var) (Atom)
-module VarInt = Bdd.Make (Var) (Int)
-module VarChar = Bdd.Make (Var) (Char)
-module VarUnit = Bdd.Make (Var) (Unit)
+module VarInt = struct
+  include Bdd.Make (Var) (Int)
+  let get = Get.int
+  let set = Set.int
+end
+
+module VarChar = struct
+  include Bdd.Make (Var) (Char)
+  let get = Get.char
+  let set = Set.char
+end
+module VarUnit = struct
+  include Bdd.Make (Var) (Unit)
+  let get = Get.unit
+  let set = Set.unit
+end
+
 
 module rec Descr :
   (Common.T
@@ -46,17 +63,17 @@ module rec Descr :
             VarInt.t,
             VarChar.t,
             VarUnit.t,
-            VarProduct.t,
-            VarProduct.t )
-            descr) = struct
+            VarProduct_.t,
+            VarProduct_.t )
+            descr_) = struct
   type t =
     ( VarAtom.t,
       VarInt.t,
       VarChar.t,
       VarUnit.t,
-      VarProduct.t,
-      VarProduct.t )
-      descr
+      VarProduct_.t,
+      VarProduct_.t )
+      descr_
 
   let equal t1 t2 =
     t1 == t2
@@ -64,8 +81,8 @@ module rec Descr :
        && VarInt.equal t1.int t2.int
        && VarChar.equal t1.char t2.char
        && VarUnit.equal t1.unit t2.unit
-       && VarProduct.equal t1.product t2.product
-       && VarProduct.equal t1.arrow t2.arrow
+       && VarProduct_.equal t1.product t2.product
+       && VarProduct_.equal t1.arrow t2.arrow
 
   let (let<> ) c f =
     if c <> 0 then c else
@@ -76,8 +93,8 @@ module rec Descr :
     let<> () = VarInt.compare t1.int t2.int in
     let<> () = VarChar.compare t1.char t2.char in
     let<> () = VarUnit.compare t1.unit t2.unit in
-    let<> () = VarProduct.compare t1.product t2.product in
-    let<> () = VarProduct.compare t1.arrow t2.arrow in
+    let<> () = VarProduct_.compare t1.product t2.product in
+    let<> () = VarProduct_.compare t1.arrow t2.arrow in
     0
   let h v x = v + ((x lsl 5) - x)
 
@@ -86,8 +103,8 @@ module rec Descr :
     |> h (VarInt.hash t.int)
     |> h (VarChar.hash t.char)
     |> h (VarUnit.hash t.unit)
-    |> h (VarProduct.hash t.product)
-    |> h (VarProduct.hash t.arrow)
+    |> h (VarProduct_.hash t.product)
+    |> h (VarProduct_.hash t.arrow)
 
   let pp _fmt _t = ()
 end
@@ -104,13 +121,39 @@ end
 and Product : (Sigs.Bdd with type atom = Node.t * Node.t) =
   Bdd.Make (Common.Pair (Node) (Node)) (Unit)
 
-and VarProduct : Sigs.Bdd2 with type atom = Var.t
-                            and type Leaf.t = Product.t
-                            and type Leaf.atom = Product.atom
-                            and type Leaf.leaf = Product.leaf
-  =  Bdd.MakeLevel2 (Var) (Product)
+and VarProduct_ : Sigs.Bdd2 with type atom = Var.t
+                             and type Leaf.t = Product.t
+                             and type Leaf.atom = Product.atom
+                             and type Leaf.leaf = Product.leaf
 
+  = Bdd.MakeLevel2 (Var) (Product)
+
+module VarProduct =
+struct
+  include VarProduct_
+  let get = Get.product
+  let set = Set.product
+end
+module VarArrow =
+struct
+  include VarProduct_
+  let get = Get.arrow
+  let set = Set.arrow
+end
 include Descr
+type descr = t
+
+module type Basic = sig
+  include Base.Sigs.Bdd with type atom = Var.t
+  val get : descr -> t
+  val set : t -> descr -> descr
+end
+
+module type Constr = sig
+  include Base.Sigs.Bdd2 with type atom = Var.t
+  val get : descr -> t
+  val set : t -> descr -> descr
+end
 
 let empty = {
   atom = VarAtom.empty;
@@ -138,7 +181,7 @@ end
 
 let node_uid = ref ~-1
 let node t = incr node_uid; { id = !node_uid; descr = t }
-
+let descr n = n.descr
 let make () = node empty
 
 let def n t =

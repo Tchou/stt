@@ -1,0 +1,6 @@
+type t ('a) = 'a
+
+
+type s = Int
+
+type =

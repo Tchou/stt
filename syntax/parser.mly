@@ -33,9 +33,7 @@ let prod_re = from_re "product" (fun t1 t2 -> Pair (t1, t2))
 
 %}
 
-%start < _ typ_decl list> typ_decl_list
 %start < _ typ_decl> typ_decl
-%start < _ typ_decl> single_typ_decl
 %start < _ typ_expr> typ_expr
 
 %%
@@ -45,22 +43,22 @@ let prod_re = from_re "product" (fun t1 t2 -> Pair (t1, t2))
 %inline located (expr): e = expr { mk_loc $sloc e  }
 ;
 %inline lident: l = located(IDENT) { l }
-
+;
+%inline eoi:
+   EOF | EOP {()}
+;
+%inline sol:
+    EOP* {()}
+;
 
 /* Entry points */
 
-typ_decl_list:
-l = list (typ_decl_elem); EOF { l }
-;
 typ_decl:
-t = typ_decl_elem; EOF { t }
+sol; t = typ_decl_elem; eoi { t }
 ;
-
-single_typ_decl:
-option(EOF); t = typ_decl_elem; EOF { t }
 
 typ_expr:
-t = arrow_typ; EOF { t }
+sol; t = arrow_typ; eoi { t }
 ;
 
 /* Declarations */
@@ -121,16 +119,16 @@ simple_typ_:
     let open Stt in
     let t =
         match i1, i2 with
-            None, None -> Typ.(Set.int empty VarInt.any)
-            | Some i1, None -> Typ.(Set.int empty (VarInt.leaf (Int.right i1)))
-            | None, Some i2 -> Typ.(Set.int empty (VarInt.leaf (Int.left i2)))
-            | Some i1, Some i2 -> Typ.(Set.int empty (VarInt.leaf (Int.range i1 i2)))
+            None, None -> Typ.(Set.int VarInt.any empty)
+            | Some i1, None -> Typ.(Set.int (VarInt.leaf (Int.right i1)) empty)
+            | None, Some i2 -> Typ.(Set.int (VarInt.leaf (Int.left i2)) empty)
+            | Some i1, Some i2 -> Typ.(Set.int (VarInt.leaf (Int.range i1 i2)) empty)
     in Typ t
 }
 
 |   c = CHAR { Typ (Stt.Typ.Singleton.char c)   }
 |   c1 = CHAR; "--"; c2 = CHAR {
-    Typ Stt.Typ.(Set.char empty (VarChar.leaf (Stt.Char.range c1 c2)))}
+    Typ Stt.Typ.(Set.char (VarChar.leaf (Stt.Char.range c1 c2)) empty)}
 
 
 |   a = ATOM { Typ (Stt.Typ.Singleton.atom a)   }

@@ -58,6 +58,8 @@ module type Bdd = sig
   val atom : atom -> t
   val leaf : leaf -> t
   val dnf : t -> Conj.t Seq.t
+
+  val map : atom:(atom -> t) -> leaf:(leaf -> leaf) -> t -> t
 end
 
 module type Bdd2 = sig
