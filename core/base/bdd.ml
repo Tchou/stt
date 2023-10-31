@@ -158,18 +158,6 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
   module Conj = Pair (Pair (List (X)) (List (X))) (L)
   module Disj = List (Conj)
 
-  let dnf t =
-    let rec loop todo =
-      match todo with
-      | [] -> Seq.Nil
-      | (_, _, False) :: todo -> loop todo
-      | (pos, neg, True { leaf; _ }) :: todo ->
-        Seq.Cons (((pos, neg), leaf), (memoize loop todo))
-      | (pos, neg, Node { var; low; hi; _ }) :: todo ->
-        loop ((var :: pos, neg, hi) :: (pos, var :: neg, low) :: todo)
-    in
-    memoize loop [ [], [], t ]
-
   let leaf_ t = leaf t
   let rec map ~(atom:(atom -> (atom, leaf) bdd))
       ~(leaf:leaf -> leaf) t =
@@ -177,19 +165,45 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
       False -> False
     | True r -> leaf_ (leaf r.leaf)
     | Node {var;low;hi;_} ->
-      (* var & hi  | (not var) & low) *)
-      (* TODO short_circuit w.r.t the result *)
       let res = atom var in
       let hi_res = map ~atom ~leaf hi in
       let low_res = map ~atom ~leaf low in
       cup (cap hi_res res) (diff low_res res)
+
+  let fold ~atom ~cup ~cap ~diff ~leaf ~empty ~any t  =
+    let rec loop acc_cup acc_cap is_hi =
+      function
+        False -> empty
+      | True {leaf=l;_} ->
+        cup acc_cup (leaf l acc_cap)
+      | Node { var; low; hi; _ } ->
+        let vres = atom is_hi var in
+        let acc = if is_hi then cap acc_cap vres else diff acc_cap vres in
+        if is_empty low then loop acc_cup acc true hi
+        else if is_empty hi then loop acc_cup acc false low
+        else
+          let acc_cup = loop acc_cup acc true hi in
+          loop acc_cup acc false low
+    in
+    loop empty any true t
+
+  let dnf t : Conj.t Seq.t =
+    let empty () = Seq.Nil in
+    let any = [], [] in
+    let atom _ v = v in
+    let cup disj line () = Seq.Cons (line, memoize disj ()) in
+    let cap (ap, an) v = (v :: ap, an) in
+    let diff (ap, an) v = (ap, v :: an) in
+    let leaf l line = (line, l) in
+    memoize (fold ~atom ~cup ~cap ~diff ~leaf ~empty ~any) t ()
+
+
 
 end
 
 module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
   module Leaf = L
   include Make (X) (Leaf)
-
 
   let expand_dnf (x_atoms, leaf) =
     let l_dnf = L.dnf leaf in

@@ -147,6 +147,9 @@ val product : Node.t -> Node.t -> t
 val arrow : Node.t -> Node.t -> t
 (** Same as [product] but construct an arrow type. *)
 
+val var : Var.t -> t
+(** [var v] creates a type containing only the polymorphic variable [v]. *)
+
 module Singleton : sig
   val atom : Base.Hstring.t -> t
   val int : Z.t -> t
@@ -178,3 +181,36 @@ val def : Node.t -> t -> unit
     It is an error to call [def] on an already assigned type reference.
 *)
 
+(** {1:comp Iterators}
+*)
+
+val fold : var:(bool -> Var.t -> 'a) ->
+  atom:(Atom.t -> 'a -> 'a) ->
+  int:(Int.t -> 'a -> 'a) ->
+  char:(Char.t -> 'a -> 'a) ->
+  unit:(Unit.t -> 'a -> 'a) ->
+  product:(bool -> (Node.t*Node.t) -> 'a) ->
+  arrow:(bool -> (Node.t*Node.t) -> 'a) ->
+  cup:('a -> 'a -> 'a) ->
+  cap:('a -> 'a -> 'a) ->
+  diff:('a -> 'a -> 'a) ->
+  empty:'a ->
+  any:'a ->
+  t -> 'a
+
+(** [fold f t] returns the computation of the [f] fold structure over [t]. *)
+val iter : var:(bool -> Var.t -> unit) ->
+  atom:(Atom.t -> unit) ->
+  int:(Int.t -> unit) ->
+  char:(Char.t -> unit) ->
+  unit:(Unit.t -> unit) ->
+  product:(bool -> (Node.t*Node.t) -> unit) ->
+  arrow:(bool -> (Node.t*Node.t) -> unit) ->
+  t ->
+  unit
+
+val map : var:(Var.t -> t) ->
+  atom:(Atom.t -> Atom.t) ->  int:(Int.t -> Int.t) ->
+  char:(Char.t -> Char.t) -> unit:(Unit.t -> Unit.t) ->
+  product:((Node.t * Node.t) -> (Node.t * Node.t)) ->
+  arrow:((Node.t * Node.t) -> (Node.t * Node.t)) -> t -> t

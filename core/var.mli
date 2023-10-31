@@ -11,7 +11,6 @@ type t = private {
 
 include Base.Common.T with type t := t
 
-val uid : unit -> int
 val make : ?kind:kind -> string -> t
 val dump : Format.formatter -> t -> unit
 

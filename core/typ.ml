@@ -196,6 +196,15 @@ let product n1 n2 =
 let arrow n1 n2 =
   { empty with arrow = var_product n1 n2}
 
+let var v = {
+  atom = VarAtom.atom v;
+  int =VarInt.atom v;
+  char = VarChar.atom v;
+  unit = VarUnit.atom v;
+  product = VarProduct.atom v;
+  arrow = VarArrow.atom v
+}
+
 let cup t1 t2 = {
   atom = VarAtom.cup t1.atom t2.atom;
   int = VarInt.cup t1.int t2.int;
@@ -232,19 +241,54 @@ let neg t = {
   arrow = VarProduct.neg t.arrow
 }
 
-let bdd_has_var (type a) (module M : Base.Sigs.Bdd with type t = a and type atom = Var.t) (v:a) =
-  let dnf = M.dnf v in
-  let rec loop s =
-    match s () with
-      Seq.Nil -> false
-    | Seq.Cons((([], []), _), rest) -> loop rest
-    | _ -> true
+
+let fold ~var ~atom ~int ~char ~unit ~product ~arrow ~cup ~cap ~diff ~empty ~any t =
+  let basic (type l) (module M : Basic with type leaf = l) leaf t =
+    M.fold ~atom:var ~cup ~cap ~diff ~leaf ~empty ~any (M.get t)
   in
-  loop dnf
-let _has_toplevel_var (t : t) =
-  bdd_has_var (module VarInt) t.int
-  || bdd_has_var (module VarAtom) t.atom
-  || bdd_has_var (module VarChar) t.char
-  || bdd_has_var (module VarUnit) t.unit
-  || bdd_has_var (module VarProduct) t.product
-  || bdd_has_var (module VarProduct) t.arrow
+  let constr (type l la) (module M : Constr with type Leaf.t = l and type Leaf.atom = la) latom t =
+    M.fold ~atom:var ~cup ~cap ~diff ~leaf:(
+      fun l conj ->
+        cap conj (M.Leaf.fold ~atom:latom ~cup ~cap ~diff ~leaf:(fun _ acc -> acc) ~empty ~any l)
+    ) ~empty ~any (M.get t)
+  in
+  let acc = basic (module VarInt) int t in
+  let acc = cup acc (basic (module VarChar) char t) in
+  let acc = cup acc (basic (module VarAtom) atom t) in
+  let acc = cup acc (basic (module VarUnit) unit t) in
+  let acc = cup acc (constr (module VarProduct) product t) in
+  let acc = cup acc (constr (module VarArrow) arrow t) in
+  acc
+
+let munit f = fun x () -> f x
+
+let iter ~var ~atom ~int ~char ~unit ~product ~arrow t =
+  fold ~var:(var) ~atom:(munit atom)
+    ~int:(munit int)
+    ~char:(munit char)
+    ~unit:(munit unit)
+    ~product:(product)
+    ~arrow:(arrow)
+    ~cup:(fun () () -> ())
+    ~cap:(fun () () -> ())
+    ~diff:(fun () () -> ())
+    ~empty:()
+    ~any:()
+    t
+
+let map ~var ~atom ~int ~char ~unit ~product ~arrow t =
+  let basic (type l) (module M : Basic with type leaf = l) f t acc =
+    M.set (M.map ~atom:(fun v -> M.get (var v)) ~leaf:f (M.get t)) acc
+  in
+  let constr (type l la) (module M : Constr with type Leaf.t = l and type Leaf.atom = la) f t acc =
+    M.set (M.map ~atom:(fun v -> M.get (var v)) ~leaf:(fun l ->
+        M.Leaf.map ~atom:(fun a -> M.Leaf.atom (f a)) ~leaf:Fun.id l
+      ) (M.get t)) acc
+  in
+  empty
+  |> basic (module VarAtom) atom t
+  |> basic (module VarInt) int t
+  |> basic (module VarChar) char t
+  |> basic (module VarUnit) unit t
+  |> constr (module VarProduct) product t
+  |> constr (module VarArrow) arrow t
