@@ -31,13 +31,3 @@ val refresh : Typ.t -> Typ.t * Typ.t t
 (** [refresh t] substitutes all variables of [t] with fresh variables.
     The function returns the new type and the substitution.
 *)
-
-val vars : Typ.t -> Var.Set.t * Var.Set.t
-(** [vars t] returns the sets [(co, contra)] of variables in covariant
-    and contravariant positions. Invariant variables can be computed with:
-    [Var.Set.inter co contra].
-*)
-
-val toplevel_vars : Typ.t -> Var.Set.t * Var.Set.t
-(** [toplevel_vars] is like [vars] but does not recurse below constructors.
-*)

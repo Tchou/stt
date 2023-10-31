@@ -241,54 +241,131 @@ let neg t = {
   arrow = VarProduct.neg t.arrow
 }
 
+type ('var, 'atom, 'int, 'char, 'unit, 'product, 'arrow) op =
+  {
+    var : 'var;
+    atom : 'atom;
+    int : 'int;
+    char : 'char;
+    unit : 'unit;
+    product : 'product;
+    arrow : 'arrow;
+  }
 
-let fold ~var ~atom ~int ~char ~unit ~product ~arrow ~cup ~cap ~diff ~empty ~any t =
+let fold ~op ~cup ~empty ~any t =
   let basic (type l) (module M : Basic with type leaf = l) leaf t =
-    M.fold ~atom:var ~cup ~cap ~diff ~leaf ~empty ~any (M.get t)
+    M.fold ~atom:op.var ~leaf ~cup ~empty ~any (M.get t)
   in
   let constr (type l la) (module M : Constr with type Leaf.t = l and type Leaf.atom = la) latom t =
-    M.fold ~atom:var ~cup ~cap ~diff ~leaf:(
-      fun l conj ->
-        cap conj (M.Leaf.fold ~atom:latom ~cup ~cap ~diff ~leaf:(fun _ acc -> acc) ~empty ~any l)
-    ) ~empty ~any (M.get t)
+    M.fold ~atom:op.var ~leaf:(
+      fun acc l ->
+        (M.Leaf.fold ~atom:latom ~leaf:(fun acc _ ->acc) ~cup ~empty ~any:acc l)
+    )
+      ~cup ~empty ~any (M.get t)
   in
-  let acc = basic (module VarInt) int t in
-  let acc = cup acc (basic (module VarChar) char t) in
-  let acc = cup acc (basic (module VarAtom) atom t) in
-  let acc = cup acc (basic (module VarUnit) unit t) in
-  let acc = cup acc (constr (module VarProduct) product t) in
-  let acc = cup acc (constr (module VarArrow) arrow t) in
+  let acc = basic (module VarInt) op.int t in
+  let acc = cup acc (basic (module VarChar) op.char t) in
+  let acc = cup acc (basic (module VarAtom) op.atom t) in
+  let acc = cup acc (basic (module VarUnit) op.unit t) in
+  let acc = cup acc (constr (module VarProduct) op.product t) in
+  let acc = cup acc (constr (module VarArrow) op.arrow t) in
   acc
 
-let munit f = fun x () -> f x
+let munit f = fun () x -> f x
+let munit2 f = fun x () y -> f x y
+let ignore2 _ _ = ()
 
-let iter ~var ~atom ~int ~char ~unit ~product ~arrow t =
-  fold ~var:(var) ~atom:(munit atom)
-    ~int:(munit int)
-    ~char:(munit char)
-    ~unit:(munit unit)
-    ~product:(product)
-    ~arrow:(arrow)
-    ~cup:(fun () () -> ())
-    ~cap:(fun () () -> ())
-    ~diff:(fun () () -> ())
+let ignore_iter_op = { var = ignore2; int = ignore;
+                       char = ignore; atom = ignore; unit = ignore; product = ignore2; arrow = ignore2}
+
+let iter ~op t =
+  fold ~op:{var= (munit2 op.var);
+            atom=(munit op.atom);
+            int=(munit op.int);
+            char=(munit op.char);
+            unit=(munit op.unit);
+            product = (munit2 op.product);
+            arrow = (munit2 op.arrow)
+           }
+    ~cup:ignore2
     ~empty:()
     ~any:()
     t
 
-let map ~var ~atom ~int ~char ~unit ~product ~arrow t =
+let id_map_op = { var = var; int=Fun.id; char=Fun.id; atom=Fun.id;unit=Fun.id; product=Fun.id;arrow=Fun.id}
+let map ~op t =
   let basic (type l) (module M : Basic with type leaf = l) f t acc =
-    M.set (M.map ~atom:(fun v -> M.get (var v)) ~leaf:f (M.get t)) acc
+    M.set (M.map ~atom:(fun v -> M.get (op.var v)) ~leaf:f (M.get t)) acc
   in
   let constr (type l la) (module M : Constr with type Leaf.t = l and type Leaf.atom = la) f t acc =
-    M.set (M.map ~atom:(fun v -> M.get (var v)) ~leaf:(fun l ->
+    M.set (M.map ~atom:(fun v -> M.get (op.var v)) ~leaf:(fun l ->
         M.Leaf.map ~atom:(fun a -> M.Leaf.atom (f a)) ~leaf:Fun.id l
       ) (M.get t)) acc
   in
   empty
-  |> basic (module VarAtom) atom t
-  |> basic (module VarInt) int t
-  |> basic (module VarChar) char t
-  |> basic (module VarUnit) unit t
-  |> constr (module VarProduct) product t
-  |> constr (module VarArrow) arrow t
+  |> basic (module VarAtom) op.atom t
+  |> basic (module VarInt) op.int t
+  |> basic (module VarChar) op.char t
+  |> basic (module VarUnit) op.unit t
+  |> constr (module VarProduct) op.product t
+  |> constr (module VarArrow) op.arrow t
+
+
+
+
+module BHNode = Hashtbl.Make(Common.Pair(Common.Bool)(Node))
+
+let vars t =
+  let co = ref Var.Set.empty in
+  let contra = ref Var.Set.empty in
+  let memo = BHNode.create 16 in
+  let rec loop_descr pol t =
+    iter ~op:{ ignore_iter_op with
+               var=(fun b v ->
+                   let set = if pol == b then co else contra in
+                   set := Var.Set.add v !set);
+               product = (loop_product pol);
+               arrow = (loop_arrow pol) }
+      t
+  and loop_product pol b (n1, n2) =
+    loop_node (pol == b) n1; loop_node (pol == b) n2
+  and loop_arrow pol b (n1, n2) =
+    loop_node (pol != b) n1; loop_node (pol == b) n2
+  and loop_node pol n =
+    let key = (pol, n) in
+    if not (BHNode.mem memo key) then begin
+      BHNode.add memo key ();
+      loop_descr pol n.descr
+    end
+  in
+  loop_descr true t;
+  !co, !contra
+
+let toplevel_vars t =
+  let co = ref Var.Set.empty in
+  let contra = ref Var.Set.empty in
+  iter ~op:{ignore_iter_op with
+            var=(fun b v ->
+                let set = if b then co else contra in
+                set := Var.Set.add v !set) }
+    t; !co, !contra
+
+let (let|) o f =
+  match o with
+    None -> None
+  | Some x -> f x
+
+let (&&&) o (x, b) =
+  match o with
+    None -> None
+  | Some (y, c) -> if Var.equal x y && b == c then o else None
+
+let get (module M : Basic) t = M.single_atom (M.get t)
+let single_var t =
+  let| x = get (module VarAtom) t in
+  let| x = get (module VarInt) t &&& x in
+  let| x = get (module VarChar) t &&& x in
+  let| x = get (module VarUnit) t &&& x in
+  let| x = get (module VarProduct) t &&& x in
+  let| x = get (module VarArrow) t &&& x in
+  Some x

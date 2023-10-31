@@ -14,8 +14,8 @@ type descr = t
       not semantic equality
     - {!pp} prints the internal representation of the type and is not a pretty-printer.
 
-  [descr] is an alias for [t] that is used in nested modules below that also define their
-  own type [t] (e.g. {!Basic}).
+    [descr] is an alias for [t] that is used in nested modules below that also define their
+    own type [t] (e.g. {!Basic}).
 *)
 
 
@@ -41,14 +41,14 @@ module Node : Base.Common.T
 *)
 
 module type Basic = sig
-    include Base.Sigs.Bdd with type atom = Var.t
-    val get : descr -> t
-    val set : t -> descr -> descr
+  include Base.Sigs.Bdd with type atom = Var.t
+  val get : descr -> t
+  val set : t -> descr -> descr
 end
 module type Constr = sig
-    include Base.Sigs.Bdd2 with type atom = Var.t
-    val get : descr -> t
-    val set : t -> descr -> descr
+  include Base.Sigs.Bdd2 with type atom = Var.t
+  val get : descr -> t
+  val set : t -> descr -> descr
 end
 
 (** {2:basic-comp Basic components}*)
@@ -181,36 +181,114 @@ val def : Node.t -> t -> unit
     It is an error to call [def] on an already assigned type reference.
 *)
 
-(** {1:comp Iterators}
+(** {1:iter Iterators}
+*)
+type ('var, 'atom, 'int, 'char, 'unit, 'product, 'arrow) op =
+  {
+    var : 'var;
+    atom : 'atom;
+    int : 'int;
+    char : 'char;
+    unit : 'unit;
+    product : 'product;
+    arrow : 'arrow;
+  }
+(** Type [op] holds together operations on the components of a type. *)
+
+val fold : op:((bool -> 'acc -> Var.t -> 'acc),
+               ('acc -> Atom.t -> 'acc),
+               ('acc -> Int.t -> 'acc),
+               ('acc -> Char.t -> 'acc),
+               ('acc -> Unit.t -> 'acc),
+               (bool -> 'acc -> (Node.t*Node.t) -> 'acc),
+               (bool -> 'acc -> (Node.t*Node.t) -> 'acc)) op ->
+  cup:('acc -> 'acc -> 'acc) ->
+  empty:'acc ->
+  any:'acc ->
+  t -> 'acc
+(** [fold ~op ~cup ~cap ~diff ~empty ~any t] folds the functions of
+    [op] over the structure of [t], following its DNF.
+    For instance, for integer components, assuming the DNF of is equivalent:
+    {[
+      t_int :=  [ ((pv1, nv1), i1);
+                  ((pv2, nv2), i2);
+                  ...
+                    ((pvk, nvk), ik)]
+    ]}
+    with [pvi] intersection of positive variables, [nvi] intersection on negative variables
+    and [ii] integers, then [fold] computes for this component:
+    {[
+      List.fold_left (fun acc_u ((pvi, nvi), ii) ->
+          cup acc_u (
+            let acc_i = List.fold_left (op.var true) any pvi in
+            let acc_i = List.fold_left (op.var false) acc_i nvi in
+            op.int acc_i ii
+          ) empty t_int
+    ]}
 *)
 
-val fold : var:(bool -> Var.t -> 'a) ->
-  atom:(Atom.t -> 'a -> 'a) ->
-  int:(Int.t -> 'a -> 'a) ->
-  char:(Char.t -> 'a -> 'a) ->
-  unit:(Unit.t -> 'a -> 'a) ->
-  product:(bool -> (Node.t*Node.t) -> 'a) ->
-  arrow:(bool -> (Node.t*Node.t) -> 'a) ->
-  cup:('a -> 'a -> 'a) ->
-  cap:('a -> 'a -> 'a) ->
-  diff:('a -> 'a -> 'a) ->
-  empty:'a ->
-  any:'a ->
-  t -> 'a
-
-(** [fold f t] returns the computation of the [f] fold structure over [t]. *)
-val iter : var:(bool -> Var.t -> unit) ->
-  atom:(Atom.t -> unit) ->
-  int:(Int.t -> unit) ->
-  char:(Char.t -> unit) ->
-  unit:(Unit.t -> unit) ->
-  product:(bool -> (Node.t*Node.t) -> unit) ->
-  arrow:(bool -> (Node.t*Node.t) -> unit) ->
+val iter : op:((bool -> Var.t -> unit),
+               (Atom.t -> unit),
+               (Int.t -> unit),
+               (Char.t -> unit),
+               (Unit.t -> unit),
+               (bool -> (Node.t*Node.t) -> unit),
+               (bool -> (Node.t*Node.t) -> unit)) op ->
   t ->
   unit
+(** [iter ~op t] traverses the structure of [t] and applies the appropriate
+    functions in [op] on each internal atom.
+*)
 
-val map : var:(Var.t -> t) ->
-  atom:(Atom.t -> Atom.t) ->  int:(Int.t -> Int.t) ->
-  char:(Char.t -> Char.t) -> unit:(Unit.t -> Unit.t) ->
-  product:((Node.t * Node.t) -> (Node.t * Node.t)) ->
-  arrow:((Node.t * Node.t) -> (Node.t * Node.t)) -> t -> t
+val ignore_iter_op : ((bool -> Var.t -> unit),
+                      (Atom.t -> unit),
+                      (Int.t -> unit),
+                      (Char.t -> unit),
+                      (Unit.t -> unit),
+                      (bool -> (Node.t*Node.t) -> unit),
+                      (bool -> (Node.t*Node.t) -> unit)) op
+(** Operation for [iter] that ignores every component. *)
+
+val map : op:((Var.t -> t),
+              (Atom.t -> Atom.t),
+              (Int.t -> Int.t),
+              (Char.t -> Char.t),
+              (Unit.t -> Unit.t),
+              ((Node.t*Node.t) -> (Node.t*Node.t)),
+              ((Node.t*Node.t) -> (Node.t*Node.t))
+             ) op
+  -> t -> t
+(** [map ~op t] computes a new type [t'] by applying the transformations in [op]
+      to each internal atom. Each atom must be transformed into one of the same
+      kind, except for variables which can be transformed in any type.
+*)
+
+val id_map_op : ((Var.t -> t),
+                 (Atom.t -> Atom.t),
+                 (Int.t -> Int.t),
+                 (Char.t -> Char.t),
+                 (Unit.t -> Unit.t),
+                 ((Node.t*Node.t) -> (Node.t*Node.t)),
+                 ((Node.t*Node.t) -> (Node.t*Node.t))
+                ) op
+(** Operation for [map] that performs the identity function for each internal
+    component.
+*)
+
+(** {1:vars Polymorphic variables } *)
+
+val vars : t -> Var.Set.t * Var.Set.t
+(** [vars t] returns the sets [(co, contra)] of variables in covariant
+    and contravariant positions. Invariant variables can be computed with:
+    [Var.Set.inter co contra].
+*)
+
+val toplevel_vars : t -> Var.Set.t * Var.Set.t
+(** [toplevel_vars] is like [vars] but does not recurse below constructors.
+*)
+
+val single_var : t -> (Var.t * bool) option
+(** [single_var t] returns [None] if [t] is not a single variable or a negation
+      of a single variable. Otherwise it returns [Some(v, b)] where [v] is the
+      variable and [b] denotes the polarity of the variable.
+*)

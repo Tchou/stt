@@ -37,7 +37,7 @@ let ignore_first x _ = x
 let ignore_false _ = False
 let ignore_false2 _ _ = False
 
-module Make (X : Common.T) (L : Sigs.PreSet) = struct
+module Make (X : Common.T) (L : Sigs.Poset) = struct
   type atom = X.t
   type leaf = L.t
   type t = (atom, leaf) bdd
@@ -106,6 +106,12 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
   let any = true_ L.any
   let is_any = function True { leaf; _ } -> L.is_any leaf | _ -> false
   let atom x = node x ~low:empty ~hi:any
+
+  let single_atom = function
+      Node {var; low=False; hi; _} when is_any hi -> Some (var,true)
+    | Node {var; low; hi=False; _} when is_any low -> Some (var, false)
+    | _ -> None
+
   let leaf l = true_ l
 
   let rec neg = function
@@ -170,32 +176,30 @@ module Make (X : Common.T) (L : Sigs.PreSet) = struct
       let low_res = map ~atom ~leaf low in
       cup (cap hi_res res) (diff low_res res)
 
-  let fold ~atom ~cup ~cap ~diff ~leaf ~empty ~any t  =
+  let fold ~atom ~leaf ~cup ~empty ~any t =
     let rec loop acc_cup acc_cap is_hi =
       function
         False -> empty
       | True {leaf=l;_} ->
-        cup acc_cup (leaf l acc_cap)
+        cup acc_cup (leaf acc_cap l)
       | Node { var; low; hi; _ } ->
-        let vres = atom is_hi var in
-        let acc = if is_hi then cap acc_cap vres else diff acc_cap vres in
-        if is_empty low then loop acc_cup acc true hi
-        else if is_empty hi then loop acc_cup acc false low
+        let acc_cap = atom is_hi acc_cap var in
+        if is_empty low then loop acc_cup acc_cap true hi
+        else if is_empty hi then loop acc_cup acc_cap false low
         else
-          let acc_cup = loop acc_cup acc true hi in
-          loop acc_cup acc false low
+          let acc_cup = loop acc_cup acc_cap true hi in
+          loop acc_cup acc_cap false low
     in
     loop empty any true t
+
 
   let dnf t : Conj.t Seq.t =
     let empty () = Seq.Nil in
     let any = [], [] in
-    let atom _ v = v in
+    let atom b (p, n) v = if b then v::p, n else p, v::n in
     let cup disj line () = Seq.Cons (line, memoize disj ()) in
-    let cap (ap, an) v = (v :: ap, an) in
-    let diff (ap, an) v = (ap, v :: an) in
-    let leaf l line = (line, l) in
-    memoize (fold ~atom ~cup ~cap ~diff ~leaf ~empty ~any) t ()
+    let leaf line l = line, l in
+    memoize (fold ~atom ~cup ~leaf ~empty ~any) t ()
 
 
 
@@ -213,3 +217,20 @@ module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
     flat_map_seq expand_dnf (dnf t)
 
 end
+(*
+            atom:(bool -> atom -> 'a) ->
+           atom:(bool -> atom -> 'a) ->
+
+              cup:('b -> 'c -> 'b) ->
+              cup:('b -> 'c -> 'b) ->
+
+                cap:('c -> 'a -> 'c) ->
+                cap:('e -> 'a -> 'e) ->
+
+         diff:('c -> 'a -> 'c) ->
+         leaf:('d -> 'a) -> empty:'b -> any:'c -> (atom, 'd) bdd -> 'b
+       is not compatible with the type
+         diff:('e -> 'a -> 'e) ->
+         leaf:(leaf -> 'a) -> empty:'b -> any:'e -> t -> 'b
+
+         *)

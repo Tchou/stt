@@ -1,5 +1,3 @@
-open Base
-
 module VMap = Map.Make (Var)
 type 'a t = 'a VMap.t
 let to_list s = s |> VMap.to_seq |> List.of_seq
@@ -35,7 +33,7 @@ let apply_gen var t =
         nnode
       end
   and loop_descr t =
-    Typ.map ~var ~atom:Fun.id ~int:Fun.id ~char:Fun.id ~unit:Fun.id ~product ~arrow:product t
+    Typ.map ~op:{ Typ.id_map_op with var; product; arrow = product } t
   in
   let res = loop_descr t in
   HNode.iter (fun _ (n, d) -> Typ.def n d) memo;
@@ -54,47 +52,3 @@ let refresh t =
     vt
   in
   apply_gen f t,!subst
-
-
-module BHNode = Hashtbl.Make(Common.Pair(Common.Bool)(Typ.Node))
-
-let vars t =
-  let co = ref Var.Set.empty in
-  let contra = ref Var.Set.empty in
-  let memo = BHNode.create 16 in
-  let rec loop_descr pol t =
-    Typ.iter ~var:(fun b v ->
-        let set = if pol == b then co else contra in
-        set := Var.Set.add v !set)
-      ~int:ignore ~char:ignore
-      ~atom:ignore ~unit:ignore
-      ~product:(loop_product pol)
-      ~arrow:(loop_arrow pol)
-      t
-  and loop_product pol b (n1, n2) =
-    loop_node (pol == b) n1;
-    loop_node (pol == b) n2
-  and loop_arrow pol b (n1, n2) =
-    loop_node (pol != b) n1;
-    loop_node (pol == b) n2
-  and loop_node pol n =
-    let key = (pol, n) in
-    if not (BHNode.mem memo key) then begin
-      BHNode.add memo key ();
-      loop_descr pol (Typ.descr n)
-    end
-  in
-  loop_descr true t;
-  !co, !contra
-
-let toplevel_vars t =
-  let co = ref Var.Set.empty in
-  let contra = ref Var.Set.empty in
-  Typ.iter ~var:(fun b v ->
-      let set = if b then co else contra in
-      set := Var.Set.add v !set)
-    ~int:ignore ~char:ignore
-    ~atom:ignore ~unit:ignore
-    ~product:(fun _ _ -> ())
-    ~arrow:(fun _ _ -> ())
-    t; !co, !contra
