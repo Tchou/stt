@@ -8,6 +8,7 @@ type ('atom, 'int, 'char, 'unit, 'product, 'arrow) descr_ = {
   product : 'product;
   arrow : 'arrow;
 }
+
 module Get =
 struct
   let atom t = t.atom
@@ -170,6 +171,22 @@ let any = { atom = VarAtom.any;
             product = VarProduct.any;
             arrow = VarProduct.any}
 
+
+let num_components =
+  (* We write it this way to get a compile time error and update
+     when we add more fields to descr_ *)
+  match {atom=1;int=1;char=1;unit=1;product=1;arrow=1} with
+    { atom; int; char; unit; product; arrow} ->
+    atom+int+char+unit+product+arrow
+
+type component =
+    Basic : (module Basic) -> component
+  | Constr : (module Constr) -> component
+let all_components =
+  [ Basic (module VarAtom); Basic (module VarInt);
+    Basic (module VarChar); Basic (module VarUnit);
+    Constr (module VarProduct); Constr (module VarArrow)]
+
 module Singleton =
 struct
   let atom a = {empty with atom = VarAtom.leaf (Atom.singleton a) }
@@ -279,11 +296,11 @@ let ignore_iter_op = { var = ignore2; int = ignore;
                        char = ignore; atom = ignore; unit = ignore; product = ignore2; arrow = ignore2}
 
 let iter ~op t =
-  fold ~op:{var= (munit2 op.var);
-            atom=(munit op.atom);
-            int=(munit op.int);
-            char=(munit op.char);
-            unit=(munit op.unit);
+  fold ~op:{var = (munit2 op.var);
+            atom = (munit op.atom);
+            int = (munit op.int);
+            char = (munit op.char);
+            unit = (munit op.unit);
             product = (munit2 op.product);
             arrow = (munit2 op.arrow)
            }

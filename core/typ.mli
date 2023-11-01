@@ -51,6 +51,17 @@ module type Constr = sig
   val set : t -> descr -> descr
 end
 
+val num_components : int
+(** The number of components in a type. *)
+
+type component =
+    Basic : (module Basic) -> component
+  | Constr : (module Constr) -> component
+(** A type representing a component as a first class module. *)
+
+val all_components : component list
+(** The list of all components of a type. *)
+
 (** {2:basic-comp Basic components}*)
 
 module VarAtom : Basic with type leaf = Atom.t
