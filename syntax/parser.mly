@@ -1,8 +1,6 @@
 %{
 open Ast
 
-let olist = function None -> [] | Some l -> l
-
 let mk_loc sloc descr =
     { info = sloc; descr }
 
@@ -15,10 +13,29 @@ let parse_error _pos fmt = (* Todo change *)
 let typ_nil = Typ Stt.(Typ.Singleton.atom (Base.Hstring.make "nil"))
 let typ_unit = Typ Stt.Typ.Singleton.unit
 
+(* Construct built-in types as much as possible *)
+let from_typ ftt fother t1 t2 =
+    match t1.descr, t2.descr with
+        | Typ s1, Typ s2 -> Typ (ftt s1 s2)
+        | _ -> fother t1 t2
+
+let cup = from_typ Stt.Typ.cup (fun t1 t2 -> Cup (t1, t2))
+let cap = from_typ Stt.Typ.cap (fun t1 t2 -> Cap (t1, t2))
+let diff = from_typ Stt.Typ.diff (fun t1 t2 -> Diff (t1, t2))
+
+let pair = from_typ (fun s1 s2 -> Stt.Typ.(product (node s1) (node s2)))
+                       (fun t1 t2 -> Pair (t1, t2))
+let arrow = from_typ (fun s1 s2 -> Stt.Typ.(arrow (node s1) (node s2)))
+                       (fun t1 t2 -> Arrow (t1, t2))
+let neg = function
+    | {descr = Typ d; _} -> Typ (Stt.Typ.neg d)
+    | t -> Neg t
+
+(* Construct built-in types in regexps as much as possible *)
 
 let cup_re sloc r1 r2 =
     match r1.descr, r2.descr with
-        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc sloc (Cup (t1, t2)))
+        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc sloc (cup t1 t2))
         | _ -> Re_alt (r1, r2)
 
 let from_re name cons sloc r1 r2 =
@@ -26,10 +43,11 @@ let from_re name cons sloc r1 r2 =
         Re_typ t1, Re_typ t2 -> Re_typ (mk_loc sloc (cons t1 t2))
         | _ -> parse_error sloc "Cannot mix %s and regular expression" name
 
-let arrow_re = from_re "arrow" (fun t1 t2 -> Arrow (t1, t2))
-let cap_re = from_re "cap" (fun t1 t2 -> Cap (t1, t2))
-let diff_re = from_re "diff" (fun t1 t2 -> Diff (t1, t2))
-let prod_re = from_re "product" (fun t1 t2 -> Pair (t1, t2))
+let arrow_re = from_re "arrow" arrow
+let cap_re = from_re "cap" cap
+let diff_re = from_re "diff" diff
+let prod_re = from_re "product" pair
+
 
 %}
 
@@ -64,17 +82,32 @@ sol; t = arrow_typ; eoi { t }
 /* Declarations */
 
 typ_decl_elem:
-    "type"; name = lident; o = option (delimited("(",separated_nonempty_list(",",located(VAR)),")"));
-    "="; expr = arrow_typ {
-        let params = olist o in
+    "type"; name = lident; 
+    params = inst_params (located(VAR));
+    "="; expr = typ {
         { name; params; expr }
     }
+;
+
+typ: t = located(typ_) { t }
+
+typ_:
+  a = arrow_typ; "where"; l = and_ident_typ { Rec (a, List.rev l) }
+| a = arrow_typ { a.descr }
+;
+
+and_ident_typ:
+    it = ident_typ   { [ it ]}
+| l = and_ident_typ; "and" it = ident_typ { it :: l }
+;
+ident_typ:
+x = lident; "="; t = typ { (x, t) }
 ;
 
 arrow_typ: e = located(arrow_typ_) { e }
 
 arrow_typ_:
-|   t1 = or_typ; "->"; t2 = arrow_typ { Arrow (t1, t2) }
+|   t1 = or_typ; "->"; t2 = arrow_typ { arrow t1 t2 }
 |   t = or_typ        {  t.descr }
 ;
 
@@ -82,7 +115,7 @@ arrow_typ_:
 or_typ: t = located(or_typ_) { t }
 
 or_typ_:
-|   t1 = or_typ; "|"; t2 = and_typ { Cup (t1, t2) }
+|   t1 = or_typ; "|"; t2 = and_typ { cup t1 t2 }
 |   t = and_typ { t.descr }
 ;
 
@@ -90,8 +123,8 @@ or_typ_:
 and_typ: t = located(and_typ_) { t }
 
 and_typ_:
-|   t1 = and_typ ; "&"; t2 = prod_paren_typ { Cap (t1, t2 )}
-|   t1 = and_typ ; "\\"; t2 = prod_paren_typ { Diff (t1, t2 )}
+|   t1 = and_typ ; "&"; t2 = prod_paren_typ { cap t1 t2 }
+|   t1 = and_typ ; "\\"; t2 = prod_paren_typ { diff t1 t2 }
 |   t = prod_paren_typ { t.descr }
 ;
 
@@ -99,11 +132,11 @@ and_typ_:
 prod_paren_typ: t = located(prod_paren_typ_) { t }
 
 prod_paren_typ_:
-|   "("; o = option(pair(arrow_typ, option(preceded(",", arrow_typ)))); ")" {
+|   "("; o = option(pair(typ, option(preceded(",", typ)))); ")" {
     match o with
         None -> typ_unit
         | Some (t1, None) -> t1.descr
-        | Some (t1, Some t2) -> Pair(t1, t2)
+        | Some (t1, Some t2) -> pair t1 t2
     }
 | t = simple_typ { t.descr }
 ;
@@ -134,17 +167,22 @@ simple_typ_:
 |   a = ATOM { Typ (Stt.Typ.Singleton.atom a)   }
 
 |   x = lident;
-    o = option (delimited("(",separated_nonempty_list(",", arrow_typ),")")) {
-            Inst (x, match o with None -> [] | Some l -> l)
+    ofrom = option (preceded("from", lident));
+    inst = inst_params(typ) {
+        match ofrom with
+        None -> Inst (x, inst)
+        | Some (y) -> From (x, (y, inst))
     }
 
-|   "~"; e = prod_paren_typ { Neg e }
+|   "~"; e = prod_paren_typ { neg e }
 |   "["; ore = re ? ; "]"  { match ore with
                               None -> typ_nil
                             | Some re -> Regexp re }
 ;
-
-
+%inline inst_params (X):
+              { [] }
+| l = delimited("(",separated_nonempty_list(",", X),")") { l }
+;
 %inline int_or_star:
     i = INT { Some i}
     | "*"   { None  }

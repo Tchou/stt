@@ -1,24 +1,41 @@
-%token <Z.t> INT
-%token <Uchar.t> CHAR
+//Parameterized tokens
 %token <Stt.Base.Hstring.t> ATOM
+%token <Uchar.t> CHAR
 %token <Stt.Base.Hstring.t> IDENT
+%token <Z.t> INT
 %token <Stt.Base.Hstring.t> VAR
-%token EQUAL "="
-%token TYPE "type"
-%token MINUSMINUS "--"
-%token MINUSGT "->"
-%token OR "|"
-%token AND "&"
+
+//Symbols
+%token CAP "&"
+%token COMMA ","
+%token CUP "|"
 %token DIFF "\\"
+%token EQUAL "="
+%token LP "("
+%token LSB "["
+%token MINUSGT "->"
+%token MINUSMINUS "--"
 %token NOT "~"
-%token STAR "*"
 %token PLUS "+"
 %token QMARK "?"
-%token COMMA ","
-%token SEMI ";"
-%token LP "("
 %token RP ")"
-%token LSB "["
 %token RSB "]"
-%token EOF EOP /* end of : file, phrase */
+%token SEMI ";"
+%token STAR "*"
+
+//Keywords
+%token AND "and"
+%token FROM "from"
+%token TYPE "type"
+%token WHERE "where"
+
+//end of : file, phrase
+%token EOF EOP
+
+//Precedences:
+//Most of the rules are writen in a stratified way to have explicit "levels"
+//That one can jump into from other productions (e.g. reference only simple types from regexp)
+//Token precedences are used only to simplify auxiliary rules when it does not
+//Make sense to introduce an explicit stratification in between components.
+%right "where" "and"
 %%

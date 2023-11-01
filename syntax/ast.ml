@@ -16,9 +16,13 @@ type 'info typ_expr_ =
   | Neg of 'info typ_expr
   (* Polymorphism *)
   | Var of Hstring.t
-  | Inst of 'info lident * 'info typ_expr list
-  (* Syntactic sugar *)
+  | Inst of 'info instance
+  (* Regexp *)
   | Regexp of 'info re
+  (* Recursive types *)
+  | Rec of 'info typ_expr * ('info lident * 'info typ_expr) list
+  | From of 'info lident * 'info instance
+and 'info instance = 'info lident * 'info typ_expr list
 
 and 'info typ_expr = ('info, 'info typ_expr_) node
 

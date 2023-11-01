@@ -7,7 +7,10 @@ let lexical_error _pos fmt = (* Todo change *)
 
 let keywords =
   (* List keywords here to reduce the automaton size *)
-  [ ("type", TYPE )]
+  [ ("and", AND);
+    ("from", FROM);
+    ("type", TYPE );
+    ("where", WHERE)]
   |> List.to_seq
   |> Hashtbl.of_seq
 
@@ -54,8 +57,8 @@ let rec lexer lexbuf =
   | ")"  -> RP
   | "["  -> LSB
   | "]"  -> RSB
-  | "&"  -> AND
-  | "|"  -> OR
+  | "&"  -> CAP
+  | "|"  -> CUP
   | "\\" -> DIFF
   | "~" -> NOT
   | "," -> COMMA
