@@ -84,12 +84,8 @@ module rec Descr :
        && VarUnit.equal t1.unit t2.unit
        && VarProduct_.equal t1.product t2.product
        && VarProduct_.equal t1.arrow t2.arrow
-
-  let (let<> ) c f =
-    if c <> 0 then c else
-      f ()
-
   let compare t1 t2 =
+    let open Base.Common.Let in
     let<> () = VarAtom.compare t1.atom t2.atom in
     let<> () = VarInt.compare t1.int t2.int in
     let<> () = VarChar.compare t1.char t2.char in
@@ -367,10 +363,6 @@ let toplevel_vars t =
                 set := Var.Set.add v !set) }
     t; !co, !contra
 
-let (let|) o f =
-  match o with
-    None -> None
-  | Some x -> f x
 
 let (&&&) o (x, b) =
   match o with
@@ -379,6 +371,7 @@ let (&&&) o (x, b) =
 
 let get (module M : Basic) t = M.single_atom (M.get t)
 let single_var t =
+  let open Base.Common.Let in
   let| x = get (module VarAtom) t in
   let| x = get (module VarInt) t &&& x in
   let| x = get (module VarChar) t &&& x in

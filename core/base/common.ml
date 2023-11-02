@@ -95,3 +95,16 @@ struct
   let hash = function false -> 0 | true -> 1
   let pp = Format.pp_print_bool
 end
+
+module Let =
+struct
+  let (let<> ) c f =
+    if c <> 0 then c else
+      f ()
+
+  let (let|) o f =
+    match o with
+      None -> None
+    | Some x -> f x
+
+end

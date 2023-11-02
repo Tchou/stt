@@ -1,17 +1,12 @@
 %{
 open Ast
-
-let mk_loc sloc descr =
-    { info = sloc; descr }
-
-let copy_loc e descr =
-    { e with descr }
+open Loc
 
 let parse_error _pos fmt = (* Todo change *)
   Format.kasprintf (fun s -> failwith s) fmt
 
-let typ_nil = Typ Stt.(Typ.Singleton.atom (Base.Hstring.make "nil"))
-let typ_unit = Typ Stt.Typ.Singleton.unit
+let typ_nil = Typ Stt.Builtins.nil
+let typ_unit = Typ Stt.Builtins.unit
 
 (* Construct built-in types as much as possible *)
 let from_typ ftt fother t1 t2 =
@@ -35,12 +30,12 @@ let neg = function
 
 let cup_re sloc r1 r2 =
     match r1.descr, r2.descr with
-        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc sloc (cup t1 t2))
+        Re_typ t1, Re_typ t2 -> Re_typ (Loc.with_loc sloc (cup t1 t2))
         | _ -> Re_alt (r1, r2)
 
 let from_re name cons sloc r1 r2 =
     match r1.descr, r2.descr with
-        Re_typ t1, Re_typ t2 -> Re_typ (mk_loc sloc (cons t1 t2))
+        Re_typ t1, Re_typ t2 -> Re_typ (Loc.with_loc sloc (cons t1 t2))
         | _ -> parse_error sloc "Cannot mix %s and regular expression" name
 
 let arrow_re = from_re "arrow" arrow
@@ -51,14 +46,14 @@ let prod_re = from_re "product" pair
 
 %}
 
-%start < _ typ_decl> typ_decl
-%start < _ typ_expr> typ_expr
+%start <typ_decl> typ_decl
+%start <typ_expr> typ_expr
 
 %%
 
 /* Macros */
 
-%inline located (expr): e = expr { mk_loc $sloc e  }
+%inline located (expr): e = expr {Loc.with_loc $sloc e  }
 ;
 %inline lident: l = located(IDENT) { l }
 ;
@@ -145,7 +140,7 @@ prod_paren_typ_:
 simple_typ: t = located(simple_typ_) { t }
 
 simple_typ_:
-|   v = VAR  { Var v }
+|   v = located(VAR)  { Var v }
 
 |   z = INT { Typ (Stt.Typ.Singleton.int z)   }
 |   i1=int_or_star; "--"; i2=int_or_star {
@@ -168,10 +163,10 @@ simple_typ_:
 
 |   x = lident;
     ofrom = option (preceded("from", lident));
-    inst = inst_params(typ) {
+    args = inst_params(typ) {
         match ofrom with
-        None -> Inst (x, inst)
-        | Some (y) -> From (x, (y, inst))
+        None -> Inst {call=x; args; def=None}
+        | Some y -> From (x, {call=y; args; def=None})
     }
 
 |   "~"; e = prod_paren_typ { neg e }
@@ -230,11 +225,11 @@ simple_re: re = located(simple_re_) { re }
 simple_re_:
 |   typ = simple_typ               { Re_typ typ }
 |   re = simple_re; "*"            { Re_star re }
-|   re = simple_re; "+"            { Re_concat (re, (copy_loc re (Re_star re))) }
-|   re = simple_re; "?"            { Re_alt ((copy_loc re Re_epsilon), re) }
+|   re = simple_re; "+"            { Re_concat (re, (Loc.copy_loc re (Re_star re))) }
+|   re = simple_re; "?"            { Re_alt ((Loc.copy_loc re Re_epsilon), re) }
 |   "("; o = option (pair(re, option(preceded (",", re )))); ")"  {
         match o with
-          None -> Re_typ (mk_loc $sloc typ_unit)
+          None -> Re_typ (Loc.with_loc $sloc typ_unit)
         | Some (re, None) -> re.descr
         | Some (re1, Some re2) -> prod_re $sloc re1 re2
 }

@@ -1,40 +1,42 @@
 open Stt.Base
 
-type ('info, 'a) node = { info : 'info; descr : 'a }
-type 'info lident = ('info, Hstring.t) node
+type lident = Hstring.t Loc.located
 
-type 'info typ_expr_ =
+type typ_expr_ =
   (* Basic types *)
   | Typ of Stt.Typ.t
   (* Constructors *)
-  | Pair of 'info typ_expr * 'info typ_expr
-  | Arrow of 'info typ_expr * 'info typ_expr
+  | Pair of typ_expr *  typ_expr
+  | Arrow of typ_expr *  typ_expr
   (* Connectives *)
-  | Cup of 'info typ_expr * 'info typ_expr
-  | Cap of 'info typ_expr * 'info typ_expr
-  | Diff of 'info typ_expr * 'info typ_expr
-  | Neg of 'info typ_expr
+  | Cup of typ_expr *  typ_expr
+  | Cap of typ_expr *  typ_expr
+  | Diff of typ_expr *  typ_expr
+  | Neg of typ_expr
   (* Polymorphism *)
-  | Var of Hstring.t
-  | Inst of 'info instance
+  | Var of lident
+  | Inst of instance
   (* Regexp *)
-  | Regexp of 'info re
+  | Regexp of re
   (* Recursive types *)
-  | Rec of 'info typ_expr * ('info lident * 'info typ_expr) list
-  | From of 'info lident * 'info instance
-and 'info instance = 'info lident * 'info typ_expr list
+  | Rec of typ_expr * (lident * typ_expr) list
+  | From of lident *  instance
+and  instance =  { call : lident;
+                   args : typ_expr list;
+                   mutable def : typ_expr option
+                 }
 
-and 'info typ_expr = ('info, 'info typ_expr_) node
+and  typ_expr = typ_expr_ Loc.located
 
-and 'info re_ =
+and  re_ =
     Re_epsilon
-  | Re_typ of 'info typ_expr
-  | Re_star of 'info re
-  | Re_alt of 'info re * 'info re
-  | Re_concat of 'info re * 'info re
+  | Re_typ of typ_expr
+  | Re_star of re
+  | Re_alt of re *  re
+  | Re_concat of re *  re
 
-and 'info re = ('info, 'info re_) node
+and  re = re_ Loc.located
 
-type 'info typ_decl = { name : 'info lident;
-                        params : 'info lident list;
-                        expr : 'info typ_expr }
+type  typ_decl = { name :  lident;
+                   params :  lident list;
+                   expr :  typ_expr }
