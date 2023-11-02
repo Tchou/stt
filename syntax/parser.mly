@@ -87,7 +87,7 @@ typ_decl_elem:
 typ: t = located(typ_) { t }
 
 typ_:
-  a = arrow_typ; "where"; l = and_ident_typ { Rec (a, List.rev l) }
+  a = arrow_typ; "where"; l = and_ident_typ { Node (ref (Rec (a, List.rev l))) }
 | a = arrow_typ { a.descr }
 ;
 
@@ -98,6 +98,7 @@ and_ident_typ:
 ident_typ:
 x = lident; "="; t = typ { (x, t) }
 ;
+
 
 arrow_typ: e = located(arrow_typ_) { e }
 
@@ -164,9 +165,11 @@ simple_typ_:
 |   x = lident;
     ofrom = option (preceded("from", lident));
     args = inst_params(typ) {
-        match ofrom with
-        None -> Inst {call=x; args; def=None}
-        | Some y -> From (x, {call=y; args; def=None})
+        Node (ref (
+            match ofrom with
+            None -> Inst (x, args)
+            | Some y -> From (x, (y, args))
+        ))
     }
 
 |   "~"; e = prod_paren_typ { neg e }

@@ -13,18 +13,17 @@ type typ_expr_ =
   | Cap of typ_expr *  typ_expr
   | Diff of typ_expr *  typ_expr
   | Neg of typ_expr
-  (* Polymorphism *)
+  (* Polymorphic variable *)
   | Var of lident
-  | Inst of instance
   (* Regexp *)
   | Regexp of re
-  (* Recursive types *)
+  (* Type nodes (instantiation and recursive types) *)
+  | Node of node ref
+and node =
+    Inst of lident * typ_expr list
   | Rec of typ_expr * (lident * typ_expr) list
-  | From of lident *  instance
-and  instance =  { call : lident;
-                   args : typ_expr list;
-                   mutable def : typ_expr option
-                 }
+  | From of lident *  (lident * typ_expr list)
+  | Expr of typ_expr
 
 and  typ_expr = typ_expr_ Loc.located
 
