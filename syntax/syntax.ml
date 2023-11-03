@@ -1,13 +1,13 @@
 
 module Lexer = Lexer
 module Parser : sig
-  type 'a parser = ?debug:Format.formatter -> Sedlexing.lexbuf -> ('a option, string) result
+  type 'a parser = ?debug:Format.formatter -> Sedlexing.lexbuf -> (bool * 'a, string) result
   val typ_decl : Ast.typ_decl parser
   val typ_expr : Ast.typ_expr parser
 end
 =
 struct
-  type 'a parser = ?debug:Format.formatter -> Sedlexing.lexbuf -> ('a option, string) result
+  type 'a parser = ?debug:Format.formatter -> Sedlexing.lexbuf -> (bool * 'a, string) result
 
   open Parser.MenhirInterpreter
 
@@ -15,7 +15,7 @@ struct
     let pp_pos fmt p = Format.fprintf fmt "%d:%d" p.Lexing.pos_lnum
         (p.Lexing.pos_cnum -p.Lexing.pos_bol)
     in
-    let rec loop get_token cp =
+    let rec loop passed_eof get_token cp =
       match cp with
         InputNeeded _ ->
         let (token, pos_start, pos_end) as pos = get_token () in
@@ -28,18 +28,17 @@ struct
               pp_pos pos_end
               (Misc.token_to_string token)
         in
-        if token <> Tokens.EOF then loop get_token (offer cp pos)
-        else Result.ok None
+        loop (token = Tokens.EOF) get_token (offer cp pos)
       | Rejected -> Result.error "Parsing error"
-      | Accepted e -> Result.ok @@ Option.some e
+      | Accepted e -> Result.ok @@ (not passed_eof, e)
       | HandlingError _ -> Result.error "Parsing error2"
-      | _ -> loop get_token (resume cp)
+      | _ -> loop passed_eof get_token (resume cp)
     in
     fun lexbuf ->
       let start, _ = Sedlexing.lexing_positions lexbuf in
       let get_token = Sedlexing.with_tokenizer lexer lexbuf in
       let init = gram start in
-      loop get_token init
+      loop false get_token init
 
   let typ_decl ?debug = consume ?debug Parser.Incremental.typ_decl Lexer.lexer
   let typ_expr ?debug = consume ?debug Parser.Incremental.typ_expr Lexer.lexer
@@ -48,3 +47,4 @@ end
 module Misc = Misc
 module Ast = Ast
 module Tokens = Tokens
+module Typing = Typing

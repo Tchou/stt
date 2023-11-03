@@ -1,6 +1,4 @@
-type t ('a) = 'a
-
-
-type s = Int
-
-type =
+type t = 
+  X where X = (Y, Y)
+      and Y = (Z, X)
+      and Z = (X, Y) | `nil

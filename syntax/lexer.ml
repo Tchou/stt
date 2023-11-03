@@ -1,6 +1,6 @@
 open Tokens
 
-let hstr = Stt.Base.Hstring.make
+let hstr = Stt.Base.Hstring.cons
 
 let lexical_error _pos fmt = (* Todo change *)
   Format.kasprintf (fun s -> failwith s) fmt
@@ -48,7 +48,9 @@ let rec lexer lexbuf =
   (* Whitespaces and phrase separators *)
   | ' ' | '\t' | '\r' -> lexer lexbuf
   | '\n' -> new_line lexbuf; lexer lexbuf
+  | '#',Star (Compl '\n'), '\n' ->new_line lexbuf; lexer lexbuf
   | ";;" -> EOP
+
 
   (* Symbols *)
   | "->" -> MINUSGT

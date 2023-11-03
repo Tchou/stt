@@ -26,7 +26,7 @@ let sample = function
   | `Finite s -> S.min_elt_opt s
   | `Cofinite s ->
     let rec loop base i =
-      let atom = Hstring.make (Hstring.(!!base) ^ string_of_int i) in
+      let atom = Hstring.cons (Hstring.(!!base) ^ string_of_int i) in
       if S.mem atom s then loop base (i + 1) else atom
     in
-    Some (loop (Hstring.make "atom") 0)
+    Some (loop (Hstring.cons "atom") 0)

@@ -1,7 +1,7 @@
 module type Hcons = sig
   type v
   include Common.T
-  val make : v -> t
+  val cons : v -> t
   val id : t -> int
   val (!!) : t -> v
 end

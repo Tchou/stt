@@ -13,7 +13,7 @@ struct
 
   let pp fmt n = Format.fprintf fmt "@[%d:%a@]" n.id V.pp n.data
   let uid = ref ~-1
-  let make data =
+  let cons data =
     try H.find h data with Not_found ->
       let id = incr uid; !uid in
       let n = { id; data} in

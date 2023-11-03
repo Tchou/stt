@@ -15,11 +15,11 @@ module NameMap = Map.Make (Name)
 
 let mk_name = let i = ref 0 in
   fun () -> incr i;
-    Name.make ("#RE_" ^ (string_of_int !i))
+    Name.cons ("#RE_" ^ (string_of_int !i))
 
 let is_gen_name n =
   let s = Name.(!!n) in
-  String.length s = 0 || s.[0] = '#' 
+  String.length s = 0 || s.[0] = '#'
 
 module Re_compile : sig
   val compile : Ast.re -> Ast.typ_expr
@@ -165,6 +165,26 @@ type global_decl = {
   recs : Ast.typ_expr Env.t
 }
 type global = global_decl Env.t
+let empty = Env.empty
+
+let enter_builtin name t (env : global) : global =
+  let open Loc in
+  let open Ast in
+  let dummy_decl = {decl = {
+      name = with_loc dummy name;
+      params = [];
+      expr = with_loc dummy (Typ t) } ;
+     vars = [];
+     typ = t;
+     recs = Env.empty }
+  in
+  Env.add dummy_decl.decl.name dummy_decl env
+
+
+let default =
+  List.fold_left (fun acc (n, t) -> enter_builtin n t acc)
+    empty
+    Stt.Builtins.by_names
 
 let dummy_expr : Ast.typ_expr =
   Loc.(with_loc dummy (Ast.Typ Stt.Typ.empty))
@@ -284,7 +304,7 @@ let expand te =
       Memo.add memo r true;
       begin
         match !r with
-          Expr { descr = Node r' ; loc } -> 
+          Expr { descr = Node r' ; loc } ->
           let r' = follow loc r' in
           r := !r'
         | Expr te -> r := Expr (loop te)
@@ -314,18 +334,22 @@ let build_type var_map te =
        with Not_found -> error ~loc:te.Loc.loc "Unbound polymorphic variable '%s"
                            Name.(!!(lident.descr)))
     | Regexp _ -> assert false
-    | Node r ->
-      try Memo.find memo r with
-        Not_found ->
-        let n = make () in
-        Memo.add memo r n;
-        let nte =
-          match !r with
-            Expr te -> loop te
-          | _ -> assert false
-        in
-        def n (descr nte);
-        n
+    | Node r -> begin
+        match Memo.find memo r with
+        | None -> let n = make () in Memo.replace memo r (Some n); n
+        | Some n -> n
+        | exception Not_found ->
+          Memo.add memo r None;
+          let nte =
+            match !r with
+              Expr te -> loop te
+            | _ -> assert false
+          in
+          match Memo.find memo r with
+            None -> Memo.replace memo r (Some nte); nte
+          | Some n ->
+            def n (descr nte);n
+      end
   in loop te
 
 let type_decl global decl =
@@ -333,7 +357,7 @@ let type_decl global decl =
   let te, recs = derecurse global decl.expr in
   let te = expand te in
   let var_list, var_map = List.fold_left (fun (al, am) x ->
-      let s = Name.(!! (x.Loc.descr)) in
+      let s = Name.(!!(x.Loc.descr)) in
       let v = Var.make s in
       let vt = Stt.Typ.(node @@ var v) in
       (x.Loc.descr, v)::al, NameMap.add x.Loc.descr vt am

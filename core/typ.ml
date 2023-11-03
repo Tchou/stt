@@ -29,8 +29,8 @@ struct
 end
 
 type 'a node = {
+  mutable id : int;
   mutable descr : 'a;
-  id : int;
 }
 module VarAtom =
 struct
@@ -55,7 +55,6 @@ module VarUnit = struct
   let get = Get.unit
   let set = Set.unit
 end
-
 
 module rec Descr :
   (Common.T
@@ -103,7 +102,59 @@ module rec Descr :
     |> h (VarProduct_.hash t.product)
     |> h (VarProduct_.hash t.arrow)
 
-  let pp _fmt _t = ()
+
+  let pp_one fmt t =
+    let open Format in
+    fprintf fmt "@[ @[@\n";
+    fprintf fmt "@[ATOM    :%a@]@\n" VarAtom.pp (VarAtom.get t);
+    fprintf fmt "@[INT     :%a@]@\n" VarInt.pp (VarInt.get t);
+    fprintf fmt "@[CHAR    :%a@]@\n" VarChar.pp (VarChar.get t);
+    fprintf fmt "@[UNIT    :%a@]@\n" VarUnit.pp (VarUnit.get t);
+    fprintf fmt "@[PRODUCT :%a@]@\n" VarProduct_.pp t.product;
+    fprintf fmt "@[ARROW   :%a@]@\n" VarProduct_.pp t.arrow;
+    fprintf fmt "@[HASH    :%d@]@]@]@\n" (hash t);
+  module Memo = Hashtbl.Make(Node)
+  let rec collect_product memo prod =
+    VarProduct_.fold
+      ~atom:(fun _ _ _ -> ())
+      ~leaf:(fun _ p ->
+          Product.fold
+            ~atom:(fun _ () (n1, n2) ->
+                collect_node memo n1;
+                collect_node memo n2
+              )
+            ~leaf:(fun () _ -> ())
+            ~cup: (fun () () -> ())
+            ~empty:()
+            ~any:()
+            p
+        )
+      ~cup: (fun () () -> ())
+      ~empty:()
+      ~any:()
+      prod
+  and collect_node memo n =
+    if not (Memo.mem memo n) then begin
+      Memo.add memo n ();
+      collect_descr memo n.descr
+    end
+  and collect_descr memo t =
+    collect_product memo t.product;
+    collect_product memo t.arrow
+
+  let pp fmt (t : t) =
+    pp_one fmt t;
+    let memo = Memo.create 16 in
+    collect_descr memo t;
+    if Memo.length memo > 0 then begin
+      Format.fprintf fmt "@[@ NODES:@[@\n";
+      Memo.iter (fun n () ->
+          Format.fprintf fmt "@[%d: %a@]@\n" n.id
+            pp_one  n.descr
+        ) memo;
+      Format.fprintf fmt "@]@]@\n";
+    end
+
 end
 
 and Node : (Common.T with type t = Descr.t node) = struct
@@ -111,7 +162,7 @@ and Node : (Common.T with type t = Descr.t node) = struct
 
   let equal (n1 : t) (n2 : t) = n1 == n2
   let compare (n1 : t) (n2 : t) = Stdlib.Int.compare n1.id n2.id
-  let hash n = n.id
+  let hash n = if n.id < 0 then -n.id else n.id
   let pp fmt n = Format.fprintf fmt "@[NODE:%d@]" n.id
 end
 
@@ -192,13 +243,48 @@ struct
 
 end
 
-let node_uid = ref ~-1
-let node t = incr node_uid; { id = !node_uid; descr = t }
-let descr n = n.descr
-let make () = node empty
+(* Hconsing *)
+
+module DescrTable = Hashtbl.Make (
+  struct
+    include Descr
+    let equal a b =
+      let r = equal a b in
+      if (not r) && hash a = hash b then
+        Format.eprintf "Collision: %d@\n%!" (hash a);
+      r
+  end)
+let node_memo = DescrTable.create 16
+let node_uid = ref 0
+let mk_node t =
+  incr node_uid;
+  { id = !node_uid; descr = t }
+
+let node t =
+  try
+    DescrTable.find node_memo t
+  with
+    Not_found ->
+    let n = mk_node t in
+    DescrTable.add node_memo t n; n
+
+let descr n =
+  assert (n.id >= 0);
+  n.descr
+let make () =
+  let n = mk_node empty in
+  n.id <- - n.id;
+  n
 
 let def n t =
-  assert (n.descr == empty);
+  if n.id >= 0 then begin
+    Format.eprintf "Setting %a in %a, but already contains %a@\n"
+      Descr.pp t
+      Node.pp n
+      Descr.pp n.descr
+  end;
+  assert (n.id < 0);
+  n.id <- (-n.id);
   n.descr <- t
 
 let var_product n1 n2 =
@@ -224,7 +310,7 @@ let cup t1 t2 = {
   char = VarChar.cup t1.char t2.char;
   unit = VarUnit.cup t1.unit t2.unit;
   product = VarProduct.cup t1.product t2.product;
-  arrow = VarProduct.cup t1.arrow t2.arrow
+  arrow = VarArrow.cup t1.arrow t2.arrow
 }
 
 let cap t1 t2 = {
@@ -233,7 +319,7 @@ let cap t1 t2 = {
   char = VarChar.cap t1.char t2.char;
   unit = VarUnit.cap t1.unit t2.unit;
   product = VarProduct.cap t1.product t2.product;
-  arrow = VarProduct.cap t1.arrow t2.arrow
+  arrow = VarArrow.cap t1.arrow t2.arrow
 }
 
 let diff t1 t2 = {
@@ -242,7 +328,7 @@ let diff t1 t2 = {
   char = VarChar.diff t1.char t2.char;
   unit = VarUnit.diff t1.unit t2.unit;
   product = VarProduct.diff t1.product t2.product;
-  arrow = VarProduct.diff t1.arrow t2.arrow
+  arrow = VarArrow.diff t1.arrow t2.arrow
 }
 
 let neg t = {
@@ -251,7 +337,7 @@ let neg t = {
   char = VarChar.neg t.char;
   unit = VarUnit.neg t.unit;
   product = VarProduct.neg t.product;
-  arrow = VarProduct.neg t.arrow
+  arrow = VarArrow.neg t.arrow
 }
 
 type ('var, 'atom, 'int, 'char, 'unit, 'product, 'arrow) op =
@@ -324,8 +410,6 @@ let map ~op t =
   |> constr (module VarArrow) op.arrow t
 
 
-
-
 module BHNode = Hashtbl.Make(Common.Pair(Common.Bool)(Node))
 
 let vars t =
@@ -379,3 +463,95 @@ let single_var t =
   let| x = get (module VarProduct) t &&& x in
   let| x = get (module VarArrow) t &&& x in
   Some x
+
+
+
+exception Found_non_empty
+
+let is_empty_basic (module M : Basic) t =
+  if not (M.is_empty (M.get t)) then raise Found_non_empty
+
+
+type status = Empty | Non_empty | Unknown
+let memo_subtype = DescrTable.create 16
+
+let non_empty t =
+  DescrTable.replace memo_subtype t Non_empty;
+  raise Found_non_empty
+
+let () = Format.pp_set_margin Format.err_formatter 180
+let debug_subtype = true
+let debug fmt =
+  if debug_subtype then
+    Format.eprintf fmt
+  else
+    Format.ifprintf Format.err_formatter fmt
+
+module Node2 = Base.Common.Pair(Node)(Node)
+
+let leaf_conj (type l) (module M : Basic with type leaf = l) t : l Seq.t =
+  M.fold ~atom:(fun _  () _ -> ())
+    ~leaf:(fun () leaf -> leaf)
+    ~cup:(fun s l -> fun () -> Seq.Cons(l, s))
+    ~empty:(fun () -> Seq.Nil)
+    ~any:()
+    (M.get t)
+
+
+let rec is_empty t =
+  debug "TESTING IS_EMPTY (@[@[%a@])@\n" Descr.pp t;
+  match DescrTable.find memo_subtype t with
+    Non_empty -> debug "@[ NON EMPTY FROM CACHE @]@]@\n"; non_empty t
+  | Empty -> debug "@[ EMPTY FROM CACHE @]@]@\n";()
+  | Unknown -> debug "@[ ========================================== UNKNOWN FOR TYPE:%a@]@]@\n" Descr.pp t
+  | exception Not_found ->
+    try
+      debug "@[ NOT IN CACHE @]@\n";
+      DescrTable.add memo_subtype t Unknown;
+      is_empty_basic (module VarAtom) t;
+      is_empty_basic (module VarInt) t;
+      is_empty_basic (module VarChar) t;
+      is_empty_basic (module VarUnit) t;
+      leaf_conj (module VarProduct) t |> Seq.iter is_empty_product_conj;
+      DescrTable.replace memo_subtype t Empty;
+      debug "@[ EMPTY AFTER NON CACHE @]@]@\n"
+    with  Found_non_empty ->
+      debug "@[ NON EMPTY AFTER NON CACHE @]@]@\n";
+      non_empty t
+
+and is_empty_product_conj prod_bdd =
+  Product.fold ~atom:(fun b ((t1, t2) as t,l) ((s1, s2) as s) ->
+      if b then (cap t1 (descr s1), cap t2 (descr s2)), l
+      else (t, s::l))
+    ~leaf:(fun acc _ -> acc)
+    ~cup:(fun s l -> fun () -> Seq.Cons (l, s))
+    ~any:((any, any),[])
+    ~empty:(fun () -> Seq.Nil) prod_bdd
+  |> Seq.iter (fun ((t1, t2), n) -> is_empty_single_prod t1 t2 n)
+
+and is_empty_single_prod t1 t2 nprod =
+  debug "PRODUCT: SINGLE PROD: (@[%a@],@[%a@]) \ [%a]@\n"
+    Descr.pp (t1)
+    Descr.pp (t2)
+    Format.(pp_print_list Node2.pp) nprod;
+
+  try is_empty t1 with Found_non_empty ->(
+      debug "@[GOT A NON EMPTY T1@]@\n";
+      try is_empty t2 with Found_non_empty ->(
+          debug "@[GOT A NON EMPTY T2@]@\n";
+          match nprod with
+            [] -> non_empty (product (node t1) (node t2))
+          | (n1, n2) :: nnprod ->
+            is_empty_single_prod (diff t1 (descr n1)) t2 nnprod;
+            is_empty_single_prod t1 (diff t2 (descr n2)) nnprod))
+and _is_empty_arrow _arrow = true
+
+let is_empty t =
+  DescrTable.reset memo_subtype;
+  let res = try is_empty t; true with Found_non_empty -> false in
+  DescrTable.reset memo_subtype;
+  res
+
+let subtype s t = is_empty (diff s t)
+
+let equiv s t = subtype s t && subtype t s

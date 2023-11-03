@@ -16,13 +16,16 @@ let main () =
   parse [] anon usage_msg;
   let cin = open_in !input_file in
   let lexbuf = Sedlexing.Utf8.from_channel cin in
-  let rec loop () =
+  let rec loop global =
     match Syntax.Parser.typ_decl ~debug:Format.err_formatter lexbuf with
-      Ok None ->  ();
-    | Ok (Some _) -> Printf.eprintf "PARSED\n%!"; loop ()
+    | Ok (has_next, td) ->
+      let td, nglobal = Syntax.Typing.type_decl global td in
+      Format.eprintf "PARSED DECLARATION: %s:@\n%a@\nis_empty: %b@\n--@\n"
+        Syntax.Typing.Name.(!!(td.decl.name.descr)) Stt.Typ.pp td.typ
+        (Stt.Typ.is_empty td.typ);
+      if has_next then loop nglobal
     | Error msg -> Printf.eprintf "ERROR: %s\n" msg
-  in  loop ()
-
+  in  loop Syntax.Typing.default
 
 
 let () = main ()

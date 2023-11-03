@@ -19,6 +19,7 @@ type typ_expr_ =
   | Regexp of re
   (* Type nodes (instantiation and recursive types) *)
   | Node of node ref
+
 and node =
     Inst of lident * typ_expr list
   | Rec of typ_expr * (lident * typ_expr) list

@@ -303,3 +303,14 @@ val single_var : t -> (Var.t * bool) option
       of a single variable. Otherwise it returns [Some(v, b)] where [v] is the
       variable and [b] denotes the polarity of the variable.
 *)
+
+(** {1:sub Subtyping} *)
+
+val is_empty : t -> bool
+(** [is_empty t] is [true] if and only if [t] is empty. *)
+
+val subtype : t -> t -> bool
+(** [subtype s t] is [true] if and only if [s] ≤ [t]. *)
+
+val equiv : t -> t -> bool
+(** [equiv s t] is [true] if and only if [s] ≤ [t] and [t] ≤ [s]. *)

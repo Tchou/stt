@@ -1,5 +1,58 @@
 module HS = Base.Hstring
-let nil = Typ.Singleton.atom (HS.make "nil")
+open Typ
+
+let by_names_ref = ref []
+let register n (t:t) =
+  by_names_ref := (HS.cons n, t) :: !by_names_ref; t
+
+let any = register "Any" any
+let empty = register "Empty" empty
+let nil = register "Nil" @@ Singleton.atom (HS.cons "nil")
+
+let unit = register "Unit" @@ Singleton.unit
+
+let true_ = register "True" @@ Singleton.atom (HS.cons "true")
+let false_ = register "False" @@ Singleton.atom (HS.cons "false")
+let bool = register "Bool" @@ cup true_ false_
+
+let int = register "Int" @@ VarInt.set VarInt.any empty
+let char = register "Char" @@ VarChar.set VarChar.any empty
+let atom = register "Atom" @@ VarAtom.set VarAtom.any empty
+
+let z_interval i j =
+  VarInt.set (VarInt.leaf (Int.range i j)) empty
+
+let s_interval s =
+  let s = s - 1 in
+  let n = Z.(one lsl  s) in
+  z_interval Z.(~-n) Z.(pred n)
+
+let u_interval u =
+  let n = Z.(one lsl  u) in
+  z_interval Z.zero n
+
+let int8 = register "Int8" @@ s_interval 8
+let uint8 = register "Uint8" @@ u_interval 8
+let int16 = register "Int16" @@ s_interval 16
+let uint16 = register "Uint16" @@ u_interval 16
+let int32 = register "Int32" @@ s_interval 32
+let uint32 = register "Uint32" @@ u_interval 32
+let int64 = register "Int64" @@ s_interval 64
+let uint64 = register "Uint64" @@ u_interval 64
+
+let posint = register "PosInt" @@ VarInt.set (VarInt.leaf (Int.right Z.zero)) empty
+let negint = register "NegInt" @@ VarInt.set (VarInt.leaf (Int.left Z.zero)) empty
 
 
-let unit = Typ.Singleton.unit
+
+
+
+
+
+
+
+
+
+
+
+let by_names = !by_names_ref
