@@ -6,6 +6,7 @@ module X = struct
     | PosInf
     | Num of Z.t
 
+  let name = "ℤ"
   let equal a b =
     a == b
     ||

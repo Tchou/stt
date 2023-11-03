@@ -1,6 +1,6 @@
 module type T = sig
   type t
-
+  val name : string
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val hash : t -> int
@@ -10,6 +10,7 @@ end
 module Pair (X : T) (Y : T) : T with type t = X.t * Y.t = struct
   type t = X.t * Y.t
 
+  let name = "(" ^ X.name ^ ", " ^ Y.name ^ ")"
   let compare p1 p2 =
     if p1 == p2 then 0
     else
@@ -46,6 +47,7 @@ module List (X : T) : sig
 end = struct
   type t = X.t list
 
+  let name = "List (" ^ X.name ^ ")"
   let rec compare l1 l2 =
     if l1 == l2 then 0
     else
@@ -84,6 +86,7 @@ end
 
 module String =
 struct
+  let name = "String"
   include Stdlib.String
   let hash s = Hashtbl.hash s
   let pp = Format.pp_print_string
@@ -91,6 +94,7 @@ end
 
 module Bool =
 struct
+  let name = "Bool"
   include Stdlib.Bool
   let hash = function false -> 0 | true -> 1
   let pp = Format.pp_print_bool

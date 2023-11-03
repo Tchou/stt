@@ -14,7 +14,7 @@ module Make (X : V) = struct
 
   type elem = X.t
 
-  let name = "Interval"
+  let name = Printf.sprintf "Interval (%s)" X.name
   let empty = []
   let is_empty = function [] -> true | _ -> false
   let any_range = X.min, X.max

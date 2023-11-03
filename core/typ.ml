@@ -57,15 +57,15 @@ module VarUnit = struct
 end
 
 module rec Descr :
-  (Common.T
-   with type t =
-          ( VarEnum.t,
-            VarInt.t,
-            VarChar.t,
-            VarUnit.t,
-            VarProduct_.t,
-            VarProduct_.t )
-            descr_) = struct
+  Common.T
+  with type t =
+         ( VarEnum.t,
+           VarInt.t,
+           VarChar.t,
+           VarUnit.t,
+           VarProduct_.t,
+           VarProduct_.t )
+           descr_ = struct
   type t =
     ( VarEnum.t,
       VarInt.t,
@@ -74,6 +74,7 @@ module rec Descr :
       VarProduct_.t,
       VarProduct_.t )
       descr_
+  let name = "Typ"
 
   let equal t1 t2 =
     t1 == t2
@@ -159,7 +160,7 @@ end
 
 and Node : (Common.T with type t = Descr.t node) = struct
   type t = Descr.t node
-
+  let name = "Node"
   let equal (n1 : t) (n2 : t) = n1 == n2
   let compare (n1 : t) (n2 : t) = Stdlib.Int.compare n1.id n2.id
   let hash n = if n.id < 0 then -n.id else n.id

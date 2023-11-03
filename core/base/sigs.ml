@@ -43,9 +43,6 @@ module type Set = sig
 
   include Poset
 
-  val name : string
-  (** The name of the set, for pretty-printing purpose. *)
-
   type elem
   (** The type of elements of the sets. *)
 

@@ -2,6 +2,7 @@ module Pos =
 struct
   type t = Lexing.position
 
+  let name = "Pos"
   let compare p1 p2 =
     let open Stt.Base.Common.Let in
     let open Lexing in

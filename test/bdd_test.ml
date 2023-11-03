@@ -4,6 +4,7 @@ module B =
   Stt.Base.Bdd.Make
     (struct
       include String
+      let name = "String"
 
       let hash = Hashtbl.hash
       let pp fmt s = Format.fprintf fmt "%S" s

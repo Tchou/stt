@@ -1,6 +1,5 @@
 type t = bool
 type elem = unit
-
 let compare x y = if x == y then 0 else if y then 1 else -1
 let equal x y = x == y
 let hash = function false -> 0 | true -> 1

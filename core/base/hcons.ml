@@ -2,7 +2,7 @@ module Make (V : Common.T) =
 struct
   type v = V.t
   type t = { id : int; data : v}
-
+  let name = Printf.sprintf "Hcons (%s)" V.name
   module H = Hashtbl.Make(V)
   let h = H.create 16
 

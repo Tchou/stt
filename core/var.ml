@@ -3,6 +3,7 @@ type kind =
   | `generated
   ]
 
+let name = "Var"
 let uid =
   let i = ref ~-1 in
   fun () ->

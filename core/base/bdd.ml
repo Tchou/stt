@@ -42,6 +42,7 @@ module Make (X : Common.T) (L : Sigs.Poset) = struct
   type leaf = L.t
   type t = (atom, leaf) bdd
 
+  let name = Printf.sprintf "Bdd (%s) (%s)" X.name L.name
   let equal t1 t2 = t1 == t2
   let hash = function False -> 0 | True { id; _ } -> id | Node { id; _ } -> id
   let compare t1 t2 = compare (hash t1) (hash t2)
@@ -209,6 +210,7 @@ end
 module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
   module Leaf = L
   include Make (X) (Leaf)
+  let name = Printf.sprintf "Bdd2 (%s) (%s)" X.name L.name
 
   let expand_dnf (x_atoms, leaf) =
     let l_dnf = L.dnf leaf in

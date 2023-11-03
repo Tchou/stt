@@ -16,7 +16,7 @@ let pp_char fmt u =
 
 include Interval.Make (struct
   include Uchar
-
+  let name = "Uchar"
   let pp = pp_char
 end)
 

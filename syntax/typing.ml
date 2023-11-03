@@ -168,12 +168,11 @@ type global = global_decl Env.t
 let empty = Env.empty
 
 let enter_builtin name t (env : global) : global =
-  let open Loc in
   let open Ast in
   let dummy_decl = {decl = {
-      name = with_loc dummy name;
+      name = Loc.(with_loc dummy) name;
       params = [];
-      expr = with_loc dummy (Typ t) } ;
+      expr = Loc.(with_loc dummy) (Typ t) } ;
      vars = [];
      typ = t;
      recs = Env.empty }
