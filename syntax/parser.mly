@@ -160,7 +160,7 @@ simple_typ_:
     Typ Stt.Typ.(Set.char (VarChar.leaf (Stt.Char.range c1 c2)) empty)}
 
 
-|   a = ATOM { Typ (Stt.Typ.Singleton.atom a)   }
+|   a = ENUM { Typ (Stt.Typ.(Set.enum (VarEnum.leaf  (Stt.Enum.singleton a)) empty))   }
 
 |   x = lident;
     ofrom = option (preceded("from", lident));

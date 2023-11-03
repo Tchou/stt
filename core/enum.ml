@@ -1,9 +1,9 @@
 open Base
 
 include FiniteCofinite.Make (Hstring)
-let pp_atom fmt (s: Hstring.t) = Format.fprintf fmt "`%s" Hstring.(!!s)
+let pp_enum fmt (s: Hstring.t) = Format.fprintf fmt "`%s" Hstring.(!!s)
 
-let name = "Atom"
+let name = "Enum"
 
 let pp fmt (s:t) =
   let open Format in
@@ -17,7 +17,7 @@ let pp fmt (s:t) =
     | _ :: ll ->
       if c then fprintf fmt "\\";
       if c && ll <> [] then fprintf fmt "(";
-      pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "|") pp_atom fmt l;
+      pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "|") pp_enum fmt l;
       if c && ll <> [] then fprintf fmt ")"
   in
   fprintf fmt "@]"

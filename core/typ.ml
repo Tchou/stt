@@ -1,7 +1,7 @@
 open Base
 
-type ('atom, 'int, 'char, 'unit, 'product, 'arrow) descr_ = {
-  atom : 'atom;
+type ('enum, 'int, 'char, 'unit, 'product, 'arrow) descr_ = {
+  enum : 'enum;
   int : 'int;
   char : 'char;
   unit : 'unit;
@@ -11,7 +11,7 @@ type ('atom, 'int, 'char, 'unit, 'product, 'arrow) descr_ = {
 
 module Get =
 struct
-  let atom t = t.atom
+  let enum t = t.enum
   let int t = t.int
   let char t = t.char
   let unit t = t.unit
@@ -20,7 +20,7 @@ struct
 end
 module Set =
 struct
-  let atom atom t = { t with atom }
+  let enum enum t = { t with enum }
   let int int t = { t with int }
   let char char t = { t with char }
   let unit unit t = { t with unit }
@@ -32,11 +32,11 @@ type 'a node = {
   mutable id : int;
   mutable descr : 'a;
 }
-module VarAtom =
+module VarEnum =
 struct
-  include Bdd.Make (Var) (Atom)
-  let get = Get.atom
-  let set = Set.atom
+  include Bdd.Make (Var) (Enum)
+  let get = Get.enum
+  let set = Set.enum
 end
 
 module VarInt = struct
@@ -59,7 +59,7 @@ end
 module rec Descr :
   (Common.T
    with type t =
-          ( VarAtom.t,
+          ( VarEnum.t,
             VarInt.t,
             VarChar.t,
             VarUnit.t,
@@ -67,7 +67,7 @@ module rec Descr :
             VarProduct_.t )
             descr_) = struct
   type t =
-    ( VarAtom.t,
+    ( VarEnum.t,
       VarInt.t,
       VarChar.t,
       VarUnit.t,
@@ -77,7 +77,7 @@ module rec Descr :
 
   let equal t1 t2 =
     t1 == t2
-    || VarAtom.equal t1.atom t2.atom
+    || VarEnum.equal t1.enum t2.enum
        && VarInt.equal t1.int t2.int
        && VarChar.equal t1.char t2.char
        && VarUnit.equal t1.unit t2.unit
@@ -85,7 +85,7 @@ module rec Descr :
        && VarProduct_.equal t1.arrow t2.arrow
   let compare t1 t2 =
     let open Base.Common.Let in
-    let<> () = VarAtom.compare t1.atom t2.atom in
+    let<> () = VarEnum.compare t1.enum t2.enum in
     let<> () = VarInt.compare t1.int t2.int in
     let<> () = VarChar.compare t1.char t2.char in
     let<> () = VarUnit.compare t1.unit t2.unit in
@@ -95,7 +95,7 @@ module rec Descr :
   let h v x = v + ((x lsl 5) - x)
 
   let hash t =
-    h (VarAtom.hash t.atom) 0
+    h (VarEnum.hash t.enum) 0
     |> h (VarInt.hash t.int)
     |> h (VarChar.hash t.char)
     |> h (VarUnit.hash t.unit)
@@ -106,7 +106,7 @@ module rec Descr :
   let pp_one fmt t =
     let open Format in
     fprintf fmt "@[ @[@\n";
-    fprintf fmt "@[ATOM    :%a@]@\n" VarAtom.pp (VarAtom.get t);
+    fprintf fmt "@[ATOM    :%a@]@\n" VarEnum.pp (VarEnum.get t);
     fprintf fmt "@[INT     :%a@]@\n" VarInt.pp (VarInt.get t);
     fprintf fmt "@[CHAR    :%a@]@\n" VarChar.pp (VarChar.get t);
     fprintf fmt "@[UNIT    :%a@]@\n" VarUnit.pp (VarUnit.get t);
@@ -204,14 +204,14 @@ module type Constr = sig
 end
 
 let empty = {
-  atom = VarAtom.empty;
+  enum = VarEnum.empty;
   int = VarInt.empty;
   char = VarChar.empty;
   unit = VarUnit.empty;
   product = VarProduct.empty;
   arrow = VarProduct.empty
 }
-let any = { atom = VarAtom.any;
+let any = { enum = VarEnum.any;
             int = VarInt.any;
             char = VarChar.any;
             unit = VarUnit.any;
@@ -222,21 +222,21 @@ let any = { atom = VarAtom.any;
 let num_components =
   (* We write it this way to get a compile time error and update
      when we add more fields to descr_ *)
-  match {atom=1;int=1;char=1;unit=1;product=1;arrow=1} with
-    { atom; int; char; unit; product; arrow} ->
-    atom+int+char+unit+product+arrow
+  match {enum=1;int=1;char=1;unit=1;product=1;arrow=1} with
+    { enum; int; char; unit; product; arrow} ->
+    enum+int+char+unit+product+arrow
 
 type component =
     Basic : (module Basic) -> component
   | Constr : (module Constr) -> component
 let all_components =
-  [ Basic (module VarAtom); Basic (module VarInt);
+  [ Basic (module VarEnum); Basic (module VarInt);
     Basic (module VarChar); Basic (module VarUnit);
     Constr (module VarProduct); Constr (module VarArrow)]
 
 module Singleton =
 struct
-  let atom a = {empty with atom = VarAtom.leaf (Atom.singleton a) }
+  let enum a = {empty with enum = VarEnum.leaf (Enum.singleton (Base.Hstring.cons a)) }
   let int z = { empty with int = VarInt.leaf (Int.singleton z) }
   let char c = { empty with char = VarChar.leaf (Char.singleton c)}
   let unit = { empty with unit = VarUnit.any }
@@ -296,7 +296,7 @@ let arrow n1 n2 =
   { empty with arrow = var_product n1 n2}
 
 let var v = {
-  atom = VarAtom.atom v;
+  enum = VarEnum.atom v;
   int =VarInt.atom v;
   char = VarChar.atom v;
   unit = VarUnit.atom v;
@@ -305,7 +305,7 @@ let var v = {
 }
 
 let cup t1 t2 = {
-  atom = VarAtom.cup t1.atom t2.atom;
+  enum = VarEnum.cup t1.enum t2.enum;
   int = VarInt.cup t1.int t2.int;
   char = VarChar.cup t1.char t2.char;
   unit = VarUnit.cup t1.unit t2.unit;
@@ -314,7 +314,7 @@ let cup t1 t2 = {
 }
 
 let cap t1 t2 = {
-  atom = VarAtom.cap t1.atom t2.atom;
+  enum = VarEnum.cap t1.enum t2.enum;
   int = VarInt.cap t1.int t2.int;
   char = VarChar.cap t1.char t2.char;
   unit = VarUnit.cap t1.unit t2.unit;
@@ -323,7 +323,7 @@ let cap t1 t2 = {
 }
 
 let diff t1 t2 = {
-  atom = VarAtom.diff t1.atom t2.atom;
+  enum = VarEnum.diff t1.enum t2.enum;
   int = VarInt.diff t1.int t2.int;
   char = VarChar.diff t1.char t2.char;
   unit = VarUnit.diff t1.unit t2.unit;
@@ -332,7 +332,7 @@ let diff t1 t2 = {
 }
 
 let neg t = {
-  atom = VarAtom.neg t.atom;
+  enum = VarEnum.neg t.enum;
   int = VarInt.neg t.int;
   char = VarChar.neg t.char;
   unit = VarUnit.neg t.unit;
@@ -340,10 +340,10 @@ let neg t = {
   arrow = VarArrow.neg t.arrow
 }
 
-type ('var, 'atom, 'int, 'char, 'unit, 'product, 'arrow) op =
+type ('var, 'enum, 'int, 'char, 'unit, 'product, 'arrow) op =
   {
     var : 'var;
-    atom : 'atom;
+    enum : 'enum;
     int : 'int;
     char : 'char;
     unit : 'unit;
@@ -364,7 +364,7 @@ let fold ~op ~cup ~empty ~any t =
   in
   let acc = basic (module VarInt) op.int t in
   let acc = cup acc (basic (module VarChar) op.char t) in
-  let acc = cup acc (basic (module VarAtom) op.atom t) in
+  let acc = cup acc (basic (module VarEnum) op.enum t) in
   let acc = cup acc (basic (module VarUnit) op.unit t) in
   let acc = cup acc (constr (module VarProduct) op.product t) in
   let acc = cup acc (constr (module VarArrow) op.arrow t) in
@@ -375,11 +375,11 @@ let munit2 f = fun x () y -> f x y
 let ignore2 _ _ = ()
 
 let ignore_iter_op = { var = ignore2; int = ignore;
-                       char = ignore; atom = ignore; unit = ignore; product = ignore2; arrow = ignore2}
+                       char = ignore; enum = ignore; unit = ignore; product = ignore2; arrow = ignore2}
 
 let iter ~op t =
   fold ~op:{var = (munit2 op.var);
-            atom = (munit op.atom);
+            enum = (munit op.enum);
             int = (munit op.int);
             char = (munit op.char);
             unit = (munit op.unit);
@@ -391,7 +391,7 @@ let iter ~op t =
     ~any:()
     t
 
-let id_map_op = { var = var; int=Fun.id; char=Fun.id; atom=Fun.id;unit=Fun.id; product=Fun.id;arrow=Fun.id}
+let id_map_op = { var = var; int=Fun.id; char=Fun.id; enum=Fun.id;unit=Fun.id; product=Fun.id;arrow=Fun.id}
 let map ~op t =
   let basic (type l) (module M : Basic with type leaf = l) f t acc =
     M.set (M.map ~atom:(fun v -> M.get (op.var v)) ~leaf:f (M.get t)) acc
@@ -402,7 +402,7 @@ let map ~op t =
       ) (M.get t)) acc
   in
   empty
-  |> basic (module VarAtom) op.atom t
+  |> basic (module VarEnum) op.enum t
   |> basic (module VarInt) op.int t
   |> basic (module VarChar) op.char t
   |> basic (module VarUnit) op.unit t
@@ -456,7 +456,7 @@ let (&&&) o (x, b) =
 let get (module M : Basic) t = M.single_atom (M.get t)
 let single_var t =
   let open Base.Common.Let in
-  let| x = get (module VarAtom) t in
+  let| x = get (module VarEnum) t in
   let| x = get (module VarInt) t &&& x in
   let| x = get (module VarChar) t &&& x in
   let| x = get (module VarUnit) t &&& x in
@@ -508,7 +508,7 @@ let rec is_empty t =
     try
       debug "@[ NOT IN CACHE @]@\n";
       DescrTable.add memo_subtype t Unknown;
-      is_empty_basic (module VarAtom) t;
+      is_empty_basic (module VarEnum) t;
       is_empty_basic (module VarInt) t;
       is_empty_basic (module VarChar) t;
       is_empty_basic (module VarUnit) t;

@@ -3,12 +3,12 @@ let token_to_string t =
   let open Format in
   match t with
   | AND -> "AND"
-  | ATOM  (s) -> asprintf "ATOM (%a)" Stt.Atom.pp_atom s
   | CAP -> "CAP"
   | CHAR  (c) -> asprintf "CHAR (%a)" Stt.Char.pp_char c
   | COMMA -> "COMMA"
   | CUP -> "CUP"
   | DIFF -> "DIFF"
+  | ENUM  (s) -> asprintf "ENUM (%a)" Stt.Enum.pp_enum s
   | EOF -> "EOF"
   | EOP -> "EOP"
   | EQUAL -> "EQUAL"

@@ -1,5 +1,5 @@
 //Parameterized tokens
-%token <Stt.Base.Hstring.t> ATOM
+%token <Stt.Base.Hstring.t> ENUM
 %token <Uchar.t> CHAR
 %token <Stt.Base.Hstring.t> IDENT
 %token <Z.t> INT

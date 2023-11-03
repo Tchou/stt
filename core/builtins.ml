@@ -7,17 +7,17 @@ let register n (t:t) =
 
 let any = register "Any" any
 let empty = register "Empty" empty
-let nil = register "Nil" @@ Singleton.atom (HS.cons "nil")
+let nil = register "Nil" @@ Singleton.enum "nil"
 
 let unit = register "Unit" @@ Singleton.unit
 
-let true_ = register "True" @@ Singleton.atom (HS.cons "true")
-let false_ = register "False" @@ Singleton.atom (HS.cons "false")
+let true_ = register "True" @@ Singleton.enum "true"
+let false_ = register "False" @@ Singleton.enum "false"
 let bool = register "Bool" @@ cup true_ false_
 
 let int = register "Int" @@ VarInt.set VarInt.any empty
 let char = register "Char" @@ VarChar.set VarChar.any empty
-let atom = register "Atom" @@ VarAtom.set VarAtom.any empty
+let atom = register "Atom" @@ VarEnum.set VarEnum.any empty
 
 let z_interval i j =
   VarInt.set (VarInt.leaf (Int.range i j)) empty

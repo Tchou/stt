@@ -92,7 +92,7 @@ let rec lexer lexbuf =
     let s = Utf8.lexeme lexbuf in
     let is_atom = s.[0] = '`' in
     let ss = hstr (String.(sub s 1 (length s - 1))) in
-    if is_atom then ATOM ss else VAR ss
+    if is_atom then ENUM ss else VAR ss
 
   (* Identifiers names *)
   | ident -> ident_or_keyword (Utf8.lexeme lexbuf)

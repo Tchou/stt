@@ -64,11 +64,11 @@ val all_components : component list
 
 (** {2:basic-comp Basic components}*)
 
-module VarAtom : Basic with type leaf = Atom.t
+module VarEnum : Basic with type leaf = Enum.t
 module VarInt : Basic with type leaf = Int.t
 module VarChar : Basic with type leaf = Char.t
 module VarUnit : Basic with type leaf = Unit.t
-(** The basic components: Atoms, Integers, Characters and Unit *)
+(** The basic components: Enums, Integers, Characters and Unit *)
 
 (** {2:constr-comp Constructor components}*)
 
@@ -85,7 +85,7 @@ module VarArrow : Constr with module Leaf = Product
 (** {2:comp-get Component accessors }*)
 
 module Get : sig
-  val atom : t -> VarAtom.t
+  val enum : t -> VarEnum.t
   (** [atom t] returns the atom component of a type [t]. *)
 
   val int : t -> VarInt.t
@@ -106,7 +106,7 @@ end
 (** Allows one to retrieve the component of a type as a BDD. *)
 
 module Set : sig
-  val atom : VarAtom.t -> t -> t
+  val enum : VarEnum.t -> t -> t
   (** [atom t] updates the atom component of a type [t]. *)
 
   val int : VarInt.t -> t -> t
@@ -162,7 +162,7 @@ val var : Var.t -> t
 (** [var v] creates a type containing only the polymorphic variable [v]. *)
 
 module Singleton : sig
-  val atom : Base.Hstring.t -> t
+  val enum : String.t -> t
   val int : Z.t -> t
   val char : Uchar.t -> t
   val unit : t
@@ -182,7 +182,7 @@ val def : Node.t -> t -> unit
 (** [def n t] assign the type [t] to a dangling reference. This can be used
     to create a recursive type:
     {[
-      let nil = Typ.Singleton.atom "nil"
+      let nil = Typ.Singleton.enum "nil"
       let x = Typ.make ()
       let p = Typ.(product (node any) x)
       let any_list = Typ.cup p nil
@@ -194,10 +194,10 @@ val def : Node.t -> t -> unit
 
 (** {1:iter Iterators}
 *)
-type ('var, 'atom, 'int, 'char, 'unit, 'product, 'arrow) op =
+type ('var, 'enum, 'int, 'char, 'unit, 'product, 'arrow) op =
   {
     var : 'var;
-    atom : 'atom;
+    enum : 'enum;
     int : 'int;
     char : 'char;
     unit : 'unit;
@@ -207,7 +207,7 @@ type ('var, 'atom, 'int, 'char, 'unit, 'product, 'arrow) op =
 (** Type [op] holds together operations on the components of a type. *)
 
 val fold : op:((bool -> 'acc -> Var.t -> 'acc),
-               ('acc -> Atom.t -> 'acc),
+               ('acc -> Enum.t -> 'acc),
                ('acc -> Int.t -> 'acc),
                ('acc -> Char.t -> 'acc),
                ('acc -> Unit.t -> 'acc),
@@ -239,7 +239,7 @@ val fold : op:((bool -> 'acc -> Var.t -> 'acc),
 *)
 
 val iter : op:((bool -> Var.t -> unit),
-               (Atom.t -> unit),
+               (Enum.t -> unit),
                (Int.t -> unit),
                (Char.t -> unit),
                (Unit.t -> unit),
@@ -252,7 +252,7 @@ val iter : op:((bool -> Var.t -> unit),
 *)
 
 val ignore_iter_op : ((bool -> Var.t -> unit),
-                      (Atom.t -> unit),
+                      (Enum.t -> unit),
                       (Int.t -> unit),
                       (Char.t -> unit),
                       (Unit.t -> unit),
@@ -261,7 +261,7 @@ val ignore_iter_op : ((bool -> Var.t -> unit),
 (** Operation for [iter] that ignores every component. *)
 
 val map : op:((Var.t -> t),
-              (Atom.t -> Atom.t),
+              (Enum.t -> Enum.t),
               (Int.t -> Int.t),
               (Char.t -> Char.t),
               (Unit.t -> Unit.t),
@@ -275,7 +275,7 @@ val map : op:((Var.t -> t),
 *)
 
 val id_map_op : ((Var.t -> t),
-                 (Atom.t -> Atom.t),
+                 (Enum.t -> Enum.t),
                  (Int.t -> Int.t),
                  (Char.t -> Char.t),
                  (Unit.t -> Unit.t),

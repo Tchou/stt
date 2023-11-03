@@ -2,24 +2,24 @@ open Test_utils
 open Stt
 
 let ( !$ ) =
-  List.fold_left (fun acc i -> Atom.(cup acc (singleton (Base.Hstring.cons i)))) Atom.empty
+  List.fold_left (fun acc i -> Enum.(cup acc (singleton (Base.Hstring.cons i)))) Enum.empty
 
 let l1 = !$[ "A"; "B"; "C"; "D" ]
 let l2 = !$[ "A"; "B"; "E"; "F"; "G" ]
 let l1_cup_l2 = !$[ "A"; "B"; "C"; "D"; "E"; "F"; "G" ]
 let l1_cap_l2 = !$[ "A"; "B" ]
 let l1_diff_l2 = !$[ "C"; "D" ]
-let neg_l1 = Atom.neg l1
-let neg_l2 = Atom.neg l2
-let neg_l1_cup_neg_l2 = Atom.neg l1_cap_l2
-let neg_l1_cap_neg_l2 = Atom.neg l1_cup_l2
-let l1_cup_neg_l2 = Atom.neg !$[ "E"; "F"; "G" ]
+let neg_l1 = Enum.neg l1
+let neg_l2 = Enum.neg l2
+let neg_l1_cup_neg_l2 = Enum.neg l1_cap_l2
+let neg_l1_cap_neg_l2 = Enum.neg l1_cup_l2
+let l1_cup_neg_l2 = Enum.neg !$[ "E"; "F"; "G" ]
 
 let () =
   let checkb = check T.bool in
-  let check = check (module Atom) in
-  let open Atom in
-  run "Atom"
+  let check = check (module Enum) in
+  let open Enum in
+  run "Enum"
     [
       ( "is_finite",
         [
