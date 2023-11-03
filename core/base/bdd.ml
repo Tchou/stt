@@ -133,10 +133,13 @@ module Make (X : Common.T) (L : Sigs.Poset) = struct
       | False, _ -> op.f_o t2
       | _, False -> op.o_f t1
       | True r1, True r2 -> true_ (op.t_t r1.leaf r2.leaf)
-      | Node { var; low; hi; _ }, (True _ as t)
-      |(True _ as t), Node { var; low; hi; _ } ->
+      | Node { var; low; hi; _ }, (True _ as t) ->
         let low = apply op low t in
         let hi = apply op hi t in
+        node var ~low ~hi
+      |(True _ as t), Node { var; low; hi; _ } ->
+        let low = apply op t low in
+        let hi = apply op t hi in
         node var ~low ~hi
       | Node r1, Node r2 ->
         let c = X.compare r1.var r2.var in
@@ -149,13 +152,11 @@ module Make (X : Common.T) (L : Sigs.Poset) = struct
         let hi = apply op h1 h2 in
         node var ~low ~hi
 
-  let cup t1 t2 =
-    apply { eq = ignore_first; f_o = Fun.id; o_f = Fun.id; t_t = L.cup } t1 t2
+  let cup =
+    apply { eq = ignore_first; f_o = Fun.id; o_f = Fun.id; t_t = L.cup }
 
-  let cap t1 t2 =
-    apply
-      { eq = ignore_first; f_o = ignore_false; o_f = ignore_false; t_t = L.cap }
-      t1 t2
+  let cap =
+    apply { eq = ignore_first; f_o = ignore_false; o_f = ignore_false; t_t = L.cap }
 
   let diff =
     apply { eq = ignore_false2; f_o = ignore_false; o_f = Fun.id; t_t = L.diff }
@@ -177,20 +178,20 @@ module Make (X : Common.T) (L : Sigs.Poset) = struct
       cup (cap hi_res res) (diff low_res res)
 
   let fold ~atom ~leaf ~cup ~empty ~any t =
-    let rec loop acc_cup acc_cap is_hi =
-      function
+    let rec loop acc_cup acc_cap = function
         False -> empty
       | True {leaf=l;_} ->
         cup acc_cup (leaf acc_cap l)
       | Node { var; low; hi; _ } ->
-        let acc_cap = atom is_hi acc_cap var in
-        if is_empty low then loop acc_cup acc_cap true hi
-        else if is_empty hi then loop acc_cup acc_cap false low
+        if is_empty low then loop acc_cup (atom true acc_cap var) hi
+        else if is_empty hi then loop acc_cup (atom false acc_cap var) low
         else
-          let acc_cup = loop acc_cup acc_cap true hi in
-          loop acc_cup acc_cap false low
+          let acc_cup = loop acc_cup (atom true acc_cap var) hi in
+          loop acc_cup (atom false acc_cap var) low
     in
-    loop empty any true t
+    loop empty any t
+
+
 
 
   let dnf t : Conj.t Seq.t =
