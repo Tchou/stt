@@ -120,11 +120,13 @@ module Env : sig
 
   val mem : Ast.lident -> 'a t -> bool
   val mem_unloc : Name.t -> 'a t -> bool
+  val to_seq : 'a t -> (Name.t * ('a * Loc.t)) Seq.t
 end =
 struct
   open Name
   type 'a t = ('a * Loc.t) NameMap.t
   let empty = NameMap.empty
+  let to_seq e = NameMap.to_seq e
 
   let add n v env =
     NameMap.update n.Loc.descr
@@ -164,7 +166,37 @@ type global_decl = {
   typ : Typ.t;
   recs : Ast.typ_expr Env.t
 }
-type global = global_decl Env.t
+module GlobalDecl (*: Stt.Base.Common.T with type t = global_decl *)=
+struct
+  type t = global_decl
+  let name = "GlobalDecl"
+  let compare a b =
+    let na = a.decl.Ast.name in
+    let nb = b.decl.Ast.name in
+    let open Stt.Base.Common.Let in
+    let<> () = Name.compare na.Loc.descr nb.Loc.descr in
+    Loc.compare na.Loc.loc nb.Loc.loc
+
+  let equal a b = compare a b = 0
+  let hash a = Hashtbl.hash a
+
+  let pp fmt a =
+    let open Format in
+    let pp_list pe fmt l =
+      pp_print_list ~pp_sep:(fun fmt () -> pp_print_string fmt "," ) pe fmt l
+    in
+    fprintf fmt "@[";
+    fprintf fmt "@[Loc: %a@]@\n" Loc.pp a.decl.Ast.name.Loc.loc;
+    fprintf fmt "@[Name: %a" Name.pp a.decl.Ast.name.Loc.descr;
+    if a.vars <> [] then
+      fprintf fmt " (%a)" (pp_list
+                             (fun fmt (v, _) -> fprintf fmt "'%a" Name.pp v)) a.vars;
+    fprintf fmt "@]@\n";
+    fprintf fmt "@[Recs: @[%a@]@]@\n" (pp_list Name.pp)
+      (a.recs |> Env.to_seq |> Seq.map fst |> List.of_seq)
+
+end
+type global = GlobalDecl.t Env.t
 let empty = Env.empty
 
 let enter_builtin name t (env : global) : global =

@@ -20,8 +20,10 @@ let main () =
     match Syntax.Parser.typ_decl ~debug:Format.err_formatter lexbuf with
     | Ok (has_next, td) ->
       let td, nglobal = Syntax.Typing.type_decl global td in
-      Format.eprintf "PARSED DECLARATION: %s:@\n%a@\nis_empty: %b@\n--@\n"
-        Syntax.Typing.Name.(!!(td.decl.name.descr)) Stt.Typ.pp td.typ
+      let open Format in
+      eprintf "@[%a]@\n" Syntax.Typing.GlobalDecl.pp td;
+      eprintf "--@\n@[%a@]@\nis_empty: %b@\n----@\n"
+        Stt.Typ.pp td.typ
         (Stt.Typ.is_empty td.typ);
       if has_next then loop nglobal
     | Error msg -> Printf.eprintf "ERROR: %s\n" msg

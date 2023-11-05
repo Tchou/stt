@@ -3,6 +3,7 @@
 %token <Uchar.t> CHAR
 %token <Stt.Base.Hstring.t> IDENT
 %token <Z.t> INT
+%token <Uchar.t array> STRING
 %token <Stt.Base.Hstring.t> VAR
 
 //Symbols
@@ -28,6 +29,7 @@
 %token FROM "from"
 %token TYPE "type"
 %token WHERE "where"
+
 
 //end of : file, phrase
 %token EOF EOP

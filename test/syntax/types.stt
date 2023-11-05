@@ -1,4 +1,16 @@
-type t = 
-  X where X = (Y, Y)
-      and Y = (Z, X)
-      and Z = (X, Y) | `nil
+type digit = '0'--'9'
+type letter = 'A'--'Z' | 'a'--'z'
+type start_char = letter | '_'
+
+type ident = [ start_char; (start_char | digit) * ]
+
+type a = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_"
+type c = a \ ident
+
+type e = [ start_char+; ('0'--'4' | start_char)+ ; (('_'* | letter;letter;letter)?)+]
+
+type d = e \ ident
+
+type t = Int -> Int
+type u = t \ t
+type v = ((Int -> Int) & (Bool -> Bool)) \ ((Int -> Any)|(`true -> Any))

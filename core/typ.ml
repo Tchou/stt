@@ -291,7 +291,10 @@ let def n t =
 let var_product n1 n2 =
   VarProduct.(leaf (Product.atom (n1, n2)))
 let product n1 n2 =
-  { empty with product = var_product n1 n2}
+  if n1.id > 0 && n1.descr = empty then empty
+  else if n2.id > 0 && n2.descr = empty then empty
+  else
+    { empty with product = var_product n1 n2}
 
 let arrow n1 n2 =
   { empty with arrow = var_product n1 n2}
@@ -469,11 +472,11 @@ let single_var t =
 
 exception Found_non_empty
 
-let is_empty_basic (module M : Basic) t =
-  if not (M.is_empty (M.get t)) then raise Found_non_empty
+type status = Empty | Non_empty
 
+let check_basic (module M : Basic) t =
+  if not (M.is_empty (M.get t)) then raise_notrace Found_non_empty
 
-type status = Empty | Non_empty | Unknown
 let memo_subtype = DescrTable.create 16
 
 let non_empty t =
@@ -498,58 +501,94 @@ let leaf_conj (type l) (module M : Basic with type leaf = l) t : l Seq.t =
     ~any:()
     (M.get t)
 
-
-let rec is_empty t =
-  debug "TESTING IS_EMPTY (@[@[%a@])@\n" Descr.pp t;
+let rec check_status stack t =
+  debug "TESTING check (@[@[%a@])@\n" Descr.pp t;
   match DescrTable.find memo_subtype t with
     Non_empty -> debug "@[ NON EMPTY FROM CACHE @]@]@\n"; non_empty t
   | Empty -> debug "@[ EMPTY FROM CACHE @]@]@\n";()
-  | Unknown -> debug "@[ ========================================== UNKNOWN FOR TYPE:%a@]@]@\n" Descr.pp t
   | exception Not_found ->
+    let new_stack = Base.Dll.push t stack in
     try
       debug "@[ NOT IN CACHE @]@\n";
-      DescrTable.add memo_subtype t Unknown;
-      is_empty_basic (module VarEnum) t;
-      is_empty_basic (module VarInt) t;
-      is_empty_basic (module VarChar) t;
-      is_empty_basic (module VarUnit) t;
-      leaf_conj (module VarProduct) t |> Seq.iter is_empty_product_conj;
-      DescrTable.replace memo_subtype t Empty;
+      DescrTable.add memo_subtype t Empty;
+      check_basic (module VarEnum) t;
+      check_basic (module VarInt) t;
+      check_basic (module VarChar) t;
+      check_basic (module VarUnit) t;
+      leaf_conj (module VarProduct) t |> Seq.iter (check_product_conj new_stack);
+      leaf_conj (module VarArrow) t |> Seq.iter (check_arrow_conj new_stack t);
+      Base.Dll.cut_above new_stack;
+      ignore (Base.Dll.pop new_stack);
       debug "@[ EMPTY AFTER NON CACHE @]@]@\n"
     with  Found_non_empty ->
       debug "@[ NON EMPTY AFTER NON CACHE @]@]@\n";
+      Base.Dll.invalidate_above (fun t ->
+          match DescrTable.find memo_subtype t with
+            Empty ->
+            debug "@[ ==========> Invalidating @[%a@]@]@\n"
+              Descr.pp t;
+            DescrTable.remove memo_subtype t
+          | Non_empty -> ()
+        ) new_stack;
+      ignore (Base.Dll.pop new_stack);
       non_empty t
 
-and is_empty_product_conj prod_bdd =
+and check_product_conj stack prod_bdd =
   Product.fold ~atom:(fun b ((t1, t2) as t,l) ((s1, s2) as s) ->
       if b then (cap t1 (descr s1), cap t2 (descr s2)), l
       else (t, s::l))
     ~leaf:(fun acc _ -> acc)
-    ~cup:(fun s l -> fun () -> Seq.Cons (l, s))
-    ~any:((any, any),[])
-    ~empty:(fun () -> Seq.Nil) prod_bdd
-  |> Seq.iter (fun ((t1, t2), n) -> is_empty_single_prod t1 t2 n)
+    ~cup:(fun () ((t1, t2), nprod) -> check_single_prod stack t1 t2 nprod)
+    ~any:((any, any), [])
+    ~empty:() prod_bdd
 
-and is_empty_single_prod t1 t2 nprod =
+and check_single_prod stack t1 t2 nprod =
   debug "PRODUCT: SINGLE PROD: (@[%a@],@[%a@]) \ [%a]@\n"
     Descr.pp (t1)
     Descr.pp (t2)
     Format.(pp_print_list Node2.pp) nprod;
 
-  try is_empty t1 with Found_non_empty ->(
-      debug "@[GOT A NON EMPTY T1@]@\n";
-      try is_empty t2 with Found_non_empty ->(
-          debug "@[GOT A NON EMPTY T2@]@\n";
-          match nprod with
-            [] -> non_empty (product (node t1) (node t2))
-          | (n1, n2) :: nnprod ->
-            is_empty_single_prod (diff t1 (descr n1)) t2 nnprod;
-            is_empty_single_prod t1 (diff t2 (descr n2)) nnprod))
-and _is_empty_arrow _arrow = true
+  try check_status stack t1 with Found_non_empty ->
+    debug "@[GOT A NON EMPTY T1@]@\n";
+    try check_status stack t2 with Found_non_empty ->
+      debug "@[GOT A NON EMPTY T2@]@\n";
+      match nprod with
+        [] -> non_empty (product (node t1) (node t2))
+      | (n1, n2) :: nnprod ->
+        check_single_prod stack (diff t1 (descr n1)) t2 nnprod;
+        check_single_prod stack t1 (diff t2 (descr n2)) nnprod
+and check_arrow_conj stack t arrow_bdd =
+  arrow_bdd
+  |> Product.dnf
+  |> Seq.iter (fun ((pos, neg),_) -> check_neg_arrows stack t pos neg)
+and check_neg_arrows stack t pos neg =
+  match neg with
+    [ ] -> non_empty t
+  | arr :: nneg ->
+    try
+      check_single_neg_arrow stack t 
+      arr pos
+    with Found_non_empty -> check_neg_arrows stack t pos nneg
+and check_single_neg_arrow stack t (n1, n2) pos =
+  let rec loop acc_t1 acc_t2 pos =
+    match pos with
+      [] -> non_empty t
+    | (t1, t2) :: lpos ->
+      let acc_t1' = diff acc_t1 (descr t1) in
+      try check_status stack acc_t1 with Found_non_empty -> (
+          loop acc_t1' acc_t2 lpos;
+          let acc_t2' = cap acc_t2 (descr t2) in
+          try check_status stack acc_t2 with Found_non_empty ->
+            loop acc_t1 acc_t2' lpos)
+  in
+  loop (descr n1) (neg (descr n2)) pos
 
 let is_empty t =
   DescrTable.reset memo_subtype;
-  let res = try is_empty t; true with Found_non_empty -> false in
+  let res =
+    try
+      check_status Base.Dll.empty t; true
+    with Found_non_empty -> false in
   DescrTable.reset memo_subtype;
   res
 

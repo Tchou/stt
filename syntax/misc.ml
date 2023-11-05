@@ -26,6 +26,10 @@ let token_to_string t =
   | RSB -> "RSB"
   | SEMI -> "SEMI"
   | STAR -> "STAR"
+  | STRING a ->
+    let b = Buffer.create 16 in
+    Array.iter (Buffer.add_utf_8_uchar b) a;
+    asprintf "STRING (%S)" (Buffer.contents b)
   | TYPE -> "TYPE"
   | VAR (s) -> asprintf "VAR ('%s)" Stt.Base.Hstring.(!!s)
   | WHERE -> "WHERE"

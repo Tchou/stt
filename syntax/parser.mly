@@ -161,6 +161,14 @@ simple_typ_:
 
 
 |   a = ENUM { Typ (Stt.Typ.(Set.enum (VarEnum.leaf  (Stt.Enum.singleton a)) empty))   }
+|   s = STRING {
+        let open Stt.Typ in
+        let t = ref (Stt.Builtins.nil) in
+        for i = Array.length s - 1 downto 0 do
+            t:=  product ( node (Singleton.char s.(i))) (node !t);
+        done;
+        Typ !t
+    }
 
 |   x = lident;
     ofrom = option (preceded("from", lident));
