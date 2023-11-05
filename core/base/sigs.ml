@@ -6,20 +6,25 @@ module type Hcons = sig
   val (!!) : t -> v
 end
 
-module type Poset = sig
-  (** The signature of posets that can be {!empty} or full ({!any}) together
-      with set theoretic operations.
-  *)
+module type Set = sig
+  (** A signature for Sets which can be Universal (there is an 'Any' set). *)
 
   include Common.T
+
+  type elem
+  (** The type of elements of the sets. *)
+
+  val singleton : elem -> t
+  (** [singleton e] is the set containing only [e]. *)
+
   val empty : t
-  (** The empty poset. *)
+  (** The empty set. *)
 
   val is_empty : t -> bool
   (** [is_empty s] is [true] if and only if the [s] has no elements. *)
 
   val any : t
-  (** The full poset. *)
+  (** The full set. *)
 
   val is_any : t -> bool
   (** [is_any s] is [true] if and only if the [s] has all the elements. *)
@@ -36,18 +41,6 @@ module type Poset = sig
   val diff : t -> t -> t
   (** [diff s1 s2] is the difference between [s1] and [s2]. It should be equal
         to [cap s1 (neg s2)] (but can be implemented more efficiently). *)
-end
-
-module type Set = sig
-  (** A full (po)Set signature with function to build sets. *)
-
-  include Poset
-
-  type elem
-  (** The type of elements of the sets. *)
-
-  val singleton : elem -> t
-  (** [singleton e] is the set containing only [e]. *)
 
   val intersect : t -> t -> bool
   (** [intersect s1 s2] returns true if and only if [s1] and [s2] have a
