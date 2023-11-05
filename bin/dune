@@ -3,4 +3,4 @@
  (modules stt)
  (promote (until-clean))
  (public_name stt)
- (libraries stt zarith stt.syntax menhirLib sedlex))
+ (libraries stt unix zarith stt.syntax menhirLib sedlex))

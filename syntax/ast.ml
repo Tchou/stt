@@ -9,8 +9,8 @@ type typ_expr_ =
   | Pair of typ_expr *  typ_expr
   | Arrow of typ_expr *  typ_expr
   (* Connectives *)
-  | Cup of typ_expr *  typ_expr
-  | Cap of typ_expr *  typ_expr
+  | Cup of typ_expr list
+  | Cap of typ_expr list
   | Diff of typ_expr *  typ_expr
   | Neg of typ_expr
   (* Polymorphic variable *)

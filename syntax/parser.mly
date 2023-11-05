@@ -14,8 +14,8 @@ let from_typ ftt fother t1 t2 =
         | Typ s1, Typ s2 -> Typ (ftt s1 s2)
         | _ -> fother t1 t2
 
-let cup = from_typ Stt.Typ.cup (fun t1 t2 -> Cup (t1, t2))
-let cap = from_typ Stt.Typ.cap (fun t1 t2 -> Cap (t1, t2))
+let cup = from_typ Stt.Typ.cup (fun t1 t2 -> Cup [t1; t2])
+let cap = from_typ Stt.Typ.cap (fun t1 t2 -> Cap [t1; t2])
 let diff = from_typ Stt.Typ.diff (fun t1 t2 -> Diff (t1, t2))
 
 let pair = from_typ (fun s1 s2 -> Stt.Typ.(product (node s1) (node s2)))

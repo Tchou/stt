@@ -1,4 +1,4 @@
-module Make (X : Common.T) (L : Sigs.Poset) :
+module Make (X : Common.T) (L : Sigs.Set) :
   Sigs.Bdd with type atom = X.t and type leaf = L.t
 (** A functor to make Binary Decision Diagrams from the given
     [atom] and [leaf] components.

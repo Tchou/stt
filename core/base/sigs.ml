@@ -107,8 +107,6 @@ module type Bdd = sig
       BDD a disjunction.
   *)
 
-  include Poset
-
   type atom
   (** The type of [atom] elements. *)
 
@@ -116,10 +114,13 @@ module type Bdd = sig
   (** The type of [leaf] objects. *)
 
   module Conj : Common.T with type t = (atom list * atom list) * leaf
-  (** A Utility module to represent conjunctions. *)
+  (** A module to represent conjunctions. *)
+
+  include Set with type elem = Conj.t
+  (** BDD represents sets of conjunctions. *)
 
   module Disj : Common.T with type t = Conj.t list
-  (** A Utility module to represent disjunctions. *)
+  (** A module to represent disjunctions. *)
 
   val atom : atom -> t
   (** [atom a] creates a BDD that only contains [a]. *)

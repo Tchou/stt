@@ -37,7 +37,7 @@ let ignore_first x _ = x
 let ignore_false _ = False
 let ignore_false2 _ _ = False
 
-module Make (X : Common.T) (L : Sigs.Poset) = struct
+module Make (X : Common.T) (L : Sigs.Set) = struct
   type atom = X.t
   type leaf = L.t
   type t = (atom, leaf) bdd
@@ -193,8 +193,6 @@ module Make (X : Common.T) (L : Sigs.Poset) = struct
     loop empty any t
 
 
-
-
   let dnf t : Conj.t Seq.t =
     let empty () = Seq.Nil in
     let any = [], [] in
@@ -204,6 +202,28 @@ module Make (X : Common.T) (L : Sigs.Poset) = struct
     memoize (fold ~atom ~cup ~leaf ~empty ~any) t ()
 
 
+  type elem = Conj.t
+  let rcomp a b = X.compare b a
+  let mem ((pos, neg), l) t =
+    let open Stdlib in
+    let e = (List.sort rcomp pos, List.sort rcomp neg), l in
+    let rec loop d =
+      match d () with
+        Seq.Nil -> false
+      | Seq.Cons (l, ds) -> (Conj.equal e l) || loop ds
+    in loop (dnf t)
+
+  let sample t =
+    match (dnf t) () with
+      Seq.Nil -> None
+    | Seq.Cons (l, _) -> Some l
+
+  let intersect t1 t2 = not (is_empty (cap t1 t2))
+  let singleton ((pos, neg), l) =
+    let open Stdlib in
+    let acc = leaf l in
+    let acc = List.fold_left (fun acc a -> cap acc (atom a)) acc pos in
+    List.fold_left (fun acc a -> diff acc (atom a)) acc neg
 
 end
 
@@ -220,20 +240,3 @@ module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
     flat_map_seq expand_dnf (dnf t)
 
 end
-(*
-            atom:(bool -> atom -> 'a) ->
-           atom:(bool -> atom -> 'a) ->
-
-              cup:('b -> 'c -> 'b) ->
-              cup:('b -> 'c -> 'b) ->
-
-                cap:('c -> 'a -> 'c) ->
-                cap:('e -> 'a -> 'e) ->
-
-         diff:('c -> 'a -> 'c) ->
-         leaf:('d -> 'a) -> empty:'b -> any:'c -> (atom, 'd) bdd -> 'b
-       is not compatible with the type
-         diff:('e -> 'a -> 'e) ->
-         leaf:(leaf -> 'a) -> empty:'b -> any:'e -> t -> 'b
-
-         *)

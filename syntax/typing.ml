@@ -87,7 +87,7 @@ end = struct
     let add_trans q_in t =
       let t_orig = NameTable.find names t in
       let prod = copy_loc t_orig (Pair(t_orig, node t_orig.loc t)) in
-      let new_t = try copy_loc t_orig (Cup (NameTable.find htypes q_in, prod)) with Not_found -> prod in
+      let new_t = try copy_loc t_orig (Cup [NameTable.find htypes q_in; prod]) with Not_found -> prod in
       NameTable.replace htypes q_in new_t
     in
     let set_final q = NameTable.replace htypes q nil in
@@ -231,8 +231,8 @@ let derecurse global te =
       Typ _ as d -> d
     | Pair (t1, t2) -> Pair (do_loop t1, do_loop t2)
     | Arrow (t1, t2) -> Arrow (do_loop t1, do_loop t2)
-    | Cup (t1, t2) -> Cup (do_loop t1, do_loop t2)
-    | Cap (t1, t2) -> Cap (do_loop t1, do_loop t2)
+    | Cup l -> Cup (List.map do_loop l)
+    | Cap l -> Cap (List.map do_loop l)
     | Diff (t1, t2) -> Diff (do_loop t1, do_loop t2)
     | Neg t -> Neg (do_loop t)
     | Var n as d -> begin
@@ -320,8 +320,8 @@ let expand te =
     with_loc te.loc @@
     match te.descr with
     | (Typ _ | Pair _ | Arrow _ | Var _ | Regexp _) as d -> d
-    | Cup (t1, t2) -> Cup (loop t1, loop t2)
-    | Cap (t1, t2) -> Cap (loop t1, loop t2)
+    | Cup l -> Cup (List.map loop l)
+    | Cap l -> Cap (List.map loop l)
     | Diff (t1, t2) -> Diff (loop t1, loop t2)
     | Neg t -> Neg (loop t)
     | Node r -> Node (follow te.loc r)
@@ -345,6 +345,11 @@ let expand te =
       r
   in loop te
 
+let comb_list op f empty l =
+  match l with (* avoid suprious operations with any/empty *)
+    [] -> empty
+  | [ e ] -> f e
+  | e :: l -> List.fold_left (fun acc e -> op acc (f e)) (f e) l
 
 let build_type var_map te =
   let open Ast in
@@ -355,8 +360,8 @@ let build_type var_map te =
       Typ t -> node t
     | Pair (t1, t2) -> node @@ product (loop t1) (loop t2)
     | Arrow (t1, t2) -> node @@ arrow (loop t1) (loop t2)
-    | Cup (t1, t2) -> node @@ cup (descr (loop t1)) (descr (loop t2))
-    | Cap (t1, t2) -> node @@ cap (descr (loop t1)) (descr (loop t2))
+    | Cup l -> node @@ comb_list cup (fun t -> descr (loop t)) Typ.empty l
+    | Cap l -> node @@ comb_list cap (fun t -> descr (loop t)) Typ.any l
     | Diff (t1, t2) -> node @@ diff (descr (loop t1)) (descr (loop t2))
     | Neg t -> node @@ neg (descr (loop t))
     | Var lident ->
