@@ -28,9 +28,9 @@ let number = [%sedlex.regexp? Opt '-', Plus digit]
 let normal_char =
   [%sedlex.regexp?
       0x20 .. 0x26 (* 0x27 : ' *)
-    | 0x28 .. 0x53 (* 0x54 : \ *)
-    | 0x55 .. 0x7e
-    | 0xa0 .. 0x1ffff (* non control chars *)
+               | 0x28 .. 0x53 (* 0x54 : \ *)
+               | 0x55 .. 0x7e
+               | 0xa0 .. 0x1ffff (* non control chars *)
   ]
 
 let symbol_char = [%sedlex.regexp? Chars " ()[]|&-+~\\,;*+?=>"]
@@ -89,7 +89,7 @@ let rec lexer lexbuf =
   (* Whitespaces and phrase separators *)
   | ' ' | '\t' | '\r' -> lexer lexbuf
   | '\n' -> new_line lexbuf; lexer lexbuf
-  | '#',Star (Compl '\n'), '\n' ->new_line lexbuf; lexer lexbuf
+  | '#',Star (Compl '\n'), ('\n'| eof) ->new_line lexbuf; lexer lexbuf
   | ";;" -> EOP
 
 

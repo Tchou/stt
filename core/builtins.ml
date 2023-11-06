@@ -17,7 +17,9 @@ let bool = register "Bool" @@ cup true_ false_
 
 let int = register "Int" @@ VarInt.set VarInt.any empty
 let char = register "Char" @@ VarChar.set VarChar.any empty
-let atom = register "Atom" @@ VarEnum.set VarEnum.any empty
+let enum = register "Enum" @@ VarEnum.set VarEnum.any empty
+
+let arrow = register "Arrow" @@ arrow (node empty) (node any)
 
 let z_interval i j =
   VarInt.set (VarInt.leaf (Int.range i j)) empty

@@ -48,3 +48,4 @@ module Misc = Misc
 module Ast = Ast
 module Tokens = Tokens
 module Typing = Typing
+module Pretty = Pretty

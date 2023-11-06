@@ -25,8 +25,9 @@ let main () =
       let t1 = Unix.gettimeofday () in
       let open Format in
       eprintf "@[%a@]@\n" Syntax.Typing.GlobalDecl.pp td;
-      eprintf "--@\n@[%a@]@\nis_empty: %b in %fms@\n----@\n"
+      eprintf "--@\n@[%a@]@\n@[%a@]@\nis_empty: %b in %fms@\n----@\n"
         Stt.Typ.pp td.typ
+        Syntax.Pretty.pp td.typ
         is_empty   (1000. *. (t1 -. t0));
       if has_next then loop nglobal
     | Error msg -> Printf.eprintf "ERROR: %s\n" msg

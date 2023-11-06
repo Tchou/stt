@@ -103,10 +103,10 @@ module type Bdd = sig
   type atom
   (** The type of [atom] elements. *)
 
-  type leaf
-  (** The type of [leaf] objects. *)
+  module Leaf : Set
+  (** The module of [Leaf] objects. *)
 
-  module Conj : Common.T with type t = (atom list * atom list) * leaf
+  module Conj : Common.T with type t = (atom list * atom list) * Leaf.t
   (** A module to represent conjunctions. *)
 
   include Set with type elem = Conj.t
@@ -125,7 +125,7 @@ module type Bdd = sig
 
       The function returns [None] in all other cases.  *)
 
-  val leaf : leaf -> t
+  val leaf : Leaf.t -> t
   (** [leaf l] creates a BDD that only contains the leaf [l]. *)
 
   val dnf : t -> Conj.t Seq.t
@@ -135,14 +135,14 @@ module type Bdd = sig
       exponential in the size of [t].
   *)
 
-  val map : atom:(atom -> t) -> leaf:(leaf -> leaf) -> t -> t
+  val map : atom:(atom -> t) -> leaf:(Leaf.t -> Leaf.t) -> t -> t
   (** [map ~atom ~leaf t] computes a new BDD whose elements are obtained
       by calling [atom] and [leaf] on atoms and leaf elements.
   *)
 
   val fold :
     atom:(bool -> 'line -> atom -> 'line) ->
-    leaf:('line -> leaf -> 'conj) ->
+    leaf:('line -> Leaf.t -> 'conj) ->
     cup:('disj -> 'conj -> 'disj) ->
     empty:'disj ->
     any :'line ->
@@ -186,14 +186,15 @@ module type Bdd2 = sig
 
   *)
 
-  module Leaf : Bdd
   (** The module representing leaf elements. It is a BDD whose own [leaf] elements
       can be ignored (typically a singleton which can be either [empty] of [any],
       isomorphic to a Boolean value). *)
 
-  include Bdd with type leaf = Leaf.t
+  include Bdd
+  module LeafBdd : Bdd with type t = Leaf.t
+
   val full_dnf :
-    t -> ((atom list * atom list) * (Leaf.atom list * Leaf.atom list)) Seq.t
+    t -> ((atom list * atom list) * (LeafBdd.atom list * LeafBdd.atom list)) Seq.t
     (** Returns the sequence of conjunction of the BDD. The leaf elements are themselves
         unfolded, and the elements of type [Leaf.leaf] are ignored. *)
 

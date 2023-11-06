@@ -2,12 +2,13 @@ val any : Typ.t
 val empty : Typ.t
 val nil : Typ.t
 val unit : Typ.t
+val arrow : Typ.t
 val true_ : Typ.t
 val false_ : Typ.t
 val bool : Typ.t
 val int : Typ.t
 val char : Typ.t
-val atom : Typ.t
+val enum : Typ.t
 val int8 : Typ.t
 val uint8 : Typ.t
 val int16 : Typ.t

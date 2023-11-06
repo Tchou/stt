@@ -38,9 +38,12 @@ let ignore_false _ = False
 let ignore_false2 _ _ = False
 
 module Make (X : Common.T) (L : Sigs.Set) = struct
+
   type atom = X.t
-  type leaf = L.t
-  type t = (atom, leaf) bdd
+
+  module Leaf = L
+
+  type t = (atom, Leaf.t) bdd
 
   let name = Printf.sprintf "Bdd (%s) (%s)" X.name L.name
   let equal t1 t2 = t1 == t2
@@ -124,7 +127,7 @@ module Make (X : Common.T) (L : Sigs.Set) = struct
     eq : t -> t -> t;
     f_o : t -> t;
     o_f : t -> t;
-    t_t : leaf -> leaf -> leaf;
+    t_t : Leaf.t -> Leaf.t -> Leaf.t;
   }
 
   let rec apply op t1 t2 =
@@ -167,8 +170,8 @@ module Make (X : Common.T) (L : Sigs.Set) = struct
   module Disj = List (Conj)
 
   let leaf_ t = leaf t
-  let rec map ~(atom:(atom -> (atom, leaf) bdd))
-      ~(leaf:leaf -> leaf) t =
+  let rec map ~(atom:(atom -> (atom, Leaf.t) bdd))
+      ~(leaf:Leaf.t -> Leaf.t) t =
     match t with
       False -> False
     | True r -> leaf_ (leaf r.leaf)
@@ -228,8 +231,10 @@ module Make (X : Common.T) (L : Sigs.Set) = struct
 end
 
 module MakeLevel2 (X : Common.T) (L : Sigs.Bdd) = struct
-  module Leaf = L
-  include Make (X) (Leaf)
+  module LeafBdd = L
+
+  include Make (X) (L :Sigs.Set)
+
   let name = Printf.sprintf "Bdd2 (%s) (%s)" X.name L.name
 
   let expand_dnf (x_atoms, leaf) =

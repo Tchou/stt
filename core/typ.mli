@@ -56,18 +56,21 @@ val num_components : int
 
 type component =
     Basic : (module Basic) -> component
-  | Constr : (module Constr) -> component
-(** A type representing a component as a first class module. *)
+  | Constr : (module Basic)*(module Constr) -> component
+  (** A type representing the operations of a component as a first class module. 
+      The [Constr] contains two copies of the same module,
+      With the two constrained signatures
+  *)
 
 val all_components : component list
 (** The list of all components of a type. *)
 
 (** {2:basic-comp Basic components}*)
 
-module VarEnum : Basic with type leaf = Enum.t
-module VarInt : Basic with type leaf = Int.t
-module VarChar : Basic with type leaf = Char.t
-module VarUnit : Basic with type leaf = Unit.t
+module VarEnum : Basic with type Leaf.t = Enum.t
+module VarInt : Basic with type Leaf.t = Int.t
+module VarChar : Basic with type Leaf.t = Char.t
+module VarUnit : Basic with type Leaf.t = Unit.t
 (** The basic components: Enums, Integers, Characters and Unit *)
 
 (** {2:constr-comp Constructor components}*)
@@ -76,8 +79,10 @@ module Product : Base.Sigs.Bdd with type atom = Node.t * Node.t
 (** A BDD whose atoms are pairs of type references, representing a DNF
     a products *)
 
-module VarProduct : Constr with module Leaf = Product
-module VarArrow : Constr with module Leaf = Product
+module VarProduct : Constr with type Leaf.t = Product.t
+                            and type LeafBdd.t = Product.t
+module VarArrow : Constr with type Leaf.t = Product.t
+                          and type LeafBdd.t = Product.t
 (** The constr components. Arrows have the same internal representation as
     products but a different interpretation.*)
 

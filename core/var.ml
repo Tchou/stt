@@ -30,7 +30,24 @@ let dump fmt v =
   Format.fprintf fmt "'@[%s(%d,%s)@]" v.name v.id
     (if v.kind = `user then "`user" else "`generated")
 
-module Set = Set.Make (V)
+module Set = struct
+  include Set.Make (V)
+  let name = "Set(Var)"
+
+  let h257 n = (n lsl 8) + n
+  let hash s =
+    max_int land fold (fun v acc -> V.hash v + h257 acc) s 0
+  let pp ppf s =
+    let open Format in
+    let l = elements s in
+    fprintf ppf "@[{";
+    let () = match l with
+        [] -> ()
+      | l -> fprintf ppf " %a "
+               (pp_print_list ~pp_sep:(fun ppf () -> fprintf ppf ",@ ") V.pp) l
+    in
+    fprintf ppf "}@]"
+end
 
 let incr_var b =
   let rec loop i b =

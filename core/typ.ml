@@ -93,16 +93,16 @@ module rec Descr :
     let<> () = VarProduct_.compare t1.product t2.product in
     let<> () = VarProduct_.compare t1.arrow t2.arrow in
     0
-  let h v x = v + ((x lsl 5) - x)
+  let h v x = v + ((x lsl 8) + x)
 
   let hash t =
-    h (VarEnum.hash t.enum) 0
+    (VarEnum.hash t.enum)
     |> h (VarInt.hash t.int)
     |> h (VarChar.hash t.char)
     |> h (VarUnit.hash t.unit)
     |> h (VarProduct_.hash t.product)
     |> h (VarProduct_.hash t.arrow)
-
+    |> (land) max_int
 
   let pp_one fmt t =
     let open Format in
@@ -171,9 +171,9 @@ and Product : (Sigs.Bdd with type atom = Node.t * Node.t) =
   Bdd.Make (Common.Pair (Node) (Node)) (Unit)
 
 and VarProduct_ : Sigs.Bdd2 with type atom = Var.t
+                             and type LeafBdd.atom = Product.atom
                              and type Leaf.t = Product.t
-                             and type Leaf.atom = Product.atom
-                             and type Leaf.leaf = Product.leaf
+                             and type LeafBdd.t = Product.t
 
   = Bdd.MakeLevel2 (Var) (Product)
 
@@ -229,11 +229,12 @@ let num_components =
 
 type component =
     Basic : (module Basic) -> component
-  | Constr : (module Constr) -> component
+  | Constr : (module Basic) * (module Constr) -> component
 let all_components =
   [ Basic (module VarEnum); Basic (module VarInt);
     Basic (module VarChar); Basic (module VarUnit);
-    Constr (module VarProduct); Constr (module VarArrow)]
+    Constr ((module VarProduct), (module VarProduct));
+    Constr ((module VarArrow), (module VarArrow))]
 
 module Singleton =
 struct
@@ -252,7 +253,7 @@ module DescrTable = Hashtbl.Make (
     let equal a b =
       let r = equal a b in
       if (not r) && hash a = hash b then
-        Format.eprintf "Collision: %d@\n%!" (hash a);
+        Format.eprintf "Collision: %d %a %a@\n%!" (hash a) pp a pp b;
       r
   end)
 let node_memo = DescrTable.create 16
@@ -356,13 +357,13 @@ type ('var, 'enum, 'int, 'char, 'unit, 'product, 'arrow) op =
   }
 
 let fold ~op ~cup ~empty ~any t =
-  let basic (type l) (module M : Basic with type leaf = l) leaf t =
+  let basic (type l) (module M : Basic with type Leaf.t = l) leaf t =
     M.fold ~atom:op.var ~leaf ~cup ~empty ~any (M.get t)
   in
-  let constr (type l la) (module M : Constr with type Leaf.t = l and type Leaf.atom = la) latom t =
+  let constr (type la) (module M : Constr with type LeafBdd.atom = la) latom t =
     M.fold ~atom:op.var ~leaf:(
       fun acc l ->
-        (M.Leaf.fold ~atom:latom ~leaf:(fun acc _ ->acc) ~cup ~empty ~any:acc l)
+        (M.LeafBdd.fold ~atom:latom ~leaf:(fun acc _ ->acc) ~cup ~empty ~any:acc l)
     )
       ~cup ~empty ~any (M.get t)
   in
@@ -397,12 +398,12 @@ let iter ~op t =
 
 let id_map_op = { var = var; int=Fun.id; char=Fun.id; enum=Fun.id;unit=Fun.id; product=Fun.id;arrow=Fun.id}
 let map ~op t =
-  let basic (type l) (module M : Basic with type leaf = l) f t acc =
+  let basic (type l) (module M : Basic with type Leaf.t = l) f t acc =
     M.set (M.map ~atom:(fun v -> M.get (op.var v)) ~leaf:f (M.get t)) acc
   in
-  let constr (type l la) (module M : Constr with type Leaf.t = l and type Leaf.atom = la) f t acc =
+  let constr (type la) (module M : Constr with type LeafBdd.atom = la) f t acc =
     M.set (M.map ~atom:(fun v -> M.get (op.var v)) ~leaf:(fun l ->
-        M.Leaf.map ~atom:(fun a -> M.Leaf.atom (f a)) ~leaf:Fun.id l
+        M.LeafBdd.map ~atom:(fun a -> M.LeafBdd.atom (f a)) ~leaf:Fun.id l
       ) (M.get t)) acc
   in
   empty
@@ -480,7 +481,7 @@ let non_empty t =
   DescrTable.replace memo_subtype t Non_empty;
   raise Found_non_empty
 
-let leaf_union (type l) (module M : Basic with type leaf = l) t : l Seq.t =
+let leaf_union (type l) (module M : Basic with type Leaf.t = l) t : l Seq.t =
   M.fold ~atom:(fun _  () _ -> ())
     ~leaf:(fun () leaf -> leaf)
     ~cup:(fun s l -> fun () -> Seq.Cons(l, s))
