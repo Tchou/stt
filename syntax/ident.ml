@@ -1,0 +1,1 @@
+include Stt.Base.Hstring

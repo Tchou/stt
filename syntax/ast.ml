@@ -1,46 +1,62 @@
-open Stt.Base
+type  ('te, 'ident) decl =
+  { name :  'ident;
+    params : 'ident list;
+    expr : 'te }
 
-type lident = Hstring.t Loc.located
-
-type typ_expr_ =
-  (* Basic types *)
-  | Typ of Stt.Typ.t
-  (* Constructors *)
-  | Pair of typ_expr *  typ_expr
-  | Arrow of typ_expr *  typ_expr
-  (* Connectives *)
-  | Cup of typ_expr list
-  | Cap of typ_expr list
-  | Diff of typ_expr *  typ_expr
-  | Neg of typ_expr
-  (* Polymorphic variable *)
-  | Var of lident
-  (* Regexp *)
-  | Regexp of re
-  (* Type nodes (instantiation and recursive types) *)
-  | Node of node ref
-
-and node =
-    Inst of lident * typ_expr list
-  | Rec of typ_expr * (lident * typ_expr) list
-  | From of lident *  (lident * typ_expr list)
-  | Expr of typ_expr
-
-and  typ_expr = typ_expr_ Loc.located
-
-and  re_ =
-    Re_epsilon
-  | Re_typ of typ_expr
-  | Re_star of re
-  | Re_alt of re *  re
-  | Re_concat of re *  re
-
-and  re = re_ Loc.located
-
-type  typ_decl = { name :  lident;
-                   params :  lident list;
-                   expr :  typ_expr }
+module Open = struct
+  type ('te, 'ident, 're, 'extra) typ = [
+    (* Basic types *)
+    | `Typ of Stt.Typ.t
+    (* Constructors *)
+    | `Pair of 'te * 'te
+    | `Arrow of 'te * 'te
+    (* Connectives *)
+    | `Cup of 'te list
+    | `Cap of 'te list
+    | `Diff of 'te * 'te
+    | `Neg of 'te
+    (* Polymorphic variable *)
+    | `Var of 'ident
+    (* Regexp *)
+    | `Regexp of 're
+    (* Type nodes (instantiation and recursive types) *)
+    | `Node of ('te, 'ident) node ref
+    (* Extensions that are not used by the concrete syntax *)
+    | `Extra of 'extra
+  ]
+  and ('te, 'ident) node = [
+      `Inst of 'ident * 'te list
+    | `Rec of 'te * ('ident * 'te) list
+    | `From of 'ident *  ('ident * 'te list)
+    | `Expr of 'te
+  ]
+  and ('te, 're) re = [
+      `Re_epsilon
+    | `Re_typ of 'te
+    | `Re_star of 're
+    | `Re_alt of 're * 're
+    | `Re_concat of 're * 're
+  ]
 
 
 
+end
 
+
+module Located =
+struct
+  type ident = Ident.t Loc.located
+  type typ = (typ, ident, re, unit) Open.typ Loc.located
+  and node = (typ, ident) Open.node
+  and re = (typ, re) Open.re Loc.located
+  type nonrec decl = (typ, ident) decl
+end
+
+module Simple =
+struct
+  type ident = Ident.t
+  type 'a typ = ('a typ, ident, 'a re, 'a) Open.typ
+  and 'a node = ('a typ, ident) Open.node
+  and 'a re = ('a typ, 'a re) Open.re
+  type nonrec 'a decl = ('a typ, ident) decl
+end

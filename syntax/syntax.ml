@@ -2,8 +2,8 @@
 module Lexer = Lexer
 module Parser : sig
   type 'a parser = ?debug:Format.formatter -> Sedlexing.lexbuf -> (bool * 'a, string) result
-  val typ_decl : Ast.typ_decl parser
-  val typ_expr : Ast.typ_expr parser
+  val typ_decl : Ast.Located.decl parser
+  val typ_expr : Ast.Located.typ parser
 end
 =
 struct
