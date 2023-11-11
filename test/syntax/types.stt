@@ -11,8 +11,16 @@
 
 #type d = e \ ident
 #type u ('a) = (Int -> Int) \ (Int -> 'a)
-type t = Int -> Int
-type g ('b) = ((Int -> Int) | (Int -> 'b) \ (Int -> Int)) \ (Int -> 'b)
+#type t = Int -> Int
+#type g ('b) = ((Int -> Int) | (Int -> 'b) \ (Int -> Int)) \ (Int -> 'b)
 type s ('a, 'b) = ('a & (Int -> Int)) | (Int -> 'b)
 #type u = t \ t
 #type v = ((Int -> Int) & (Bool -> Bool)) \ ((Int -> Any)|(`true -> Any))
+
+
+#type t = (Int -> Int) | (Char -> Char)
+type h ('a) =
+('a  & Int ) | ('a & Char) | ('a & Enum)| ('a & Unit) | ('a & (Any, Any))
+| ('a & Arrow)
+
+type p = ((Empty -> Any)\Arrow)

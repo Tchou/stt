@@ -98,6 +98,7 @@ let choose_complement t =
 
 module Vars = Base.Common.Pair (Var.Set) (Var.Set)
 module VarTable = Hashtbl.Make (Vars)
+module DescrTable = Hashtbl.Make (Typ)
 let group_by_vars t =
   let open Typ in
   let var_table = VarTable.create 16 in
@@ -113,32 +114,42 @@ let group_by_vars t =
           update var_table key (M.set (M.leaf l) empty)
         )
     ) all_components;
-  (* Merge some entries *)
+  var_table
+
+let reduce_variables var_table =
+  (* assumes (pos <> neg) *)
   let vdest = VarTable.create 16 in
-  let entries = VarTable.to_seq var_table |> Array.of_seq in
-  let nentries = Array.length entries in
-  Format.eprintf "ENTRIES:";
-    Array.iter (fun (k, _) -> Format.eprintf "%a; " Vars.pp k) entries;
-  Format.eprintf "\n%!";
-  for i = 0 to nentries - 1 do
-    let ((pos1, neg1) as key1), t1 = entries.(i) in
-    for j = i + 1 to nentries - 1 do
-      let ((pos2, neg2) as key2), t2 = entries.(j) in
-      if Var.Set.equal pos1 neg2 then
-        let it12 = cap t1 t2 in
-        if not (is_empty it12) then begin
-            update vdest (pos2, neg1) it12;
-            let nt1 = diff t1 t2 in
-            let nt2 = diff t2 t1 in
-            entries.(i) <- (key1, nt1);
-            entries.(j) <- (key2, nt2);
-          end;
-    done; 
-  done;
-  Array.iter (fun (key, t) -> if not (is_empty t) then update vdest key t) entries;
+  let empty_key = Var.Set.(empty, empty) in
+  let update_empty t =
+    let s = try VarTable.find vdest empty_key with Not_found -> Typ.empty in
+    VarTable.replace vdest empty_key Typ.(cup t s)
+  in
+  let te = try VarTable.find var_table empty_key with Not_found -> Typ.empty in
+  VarTable.remove var_table empty_key;
+  VarTable.add vdest empty_key te;
+  VarTable.iter (fun ((pos, neg) as key) t1 ->
+      if not (VarTable.mem vdest key) then begin
+        try
+          let t2 = VarTable.find vdest (neg, pos) in
+          let i12 = Typ.cap t1 t2 in
+          if Typ.is_empty i12 then begin
+            VarTable.add vdest key t1;
+            VarTable.add vdest (neg, pos) t2;
+          end else begin
+            update_empty i12;
+            VarTable.add vdest key Typ.(diff t1 i12);
+            VarTable.add vdest (neg, pos) Typ.(diff t2 i12);
+          end
+        with Not_found -> VarTable.add vdest key t1
+      end) var_table;
+  let te = VarTable.find vdest empty_key in
+  if Typ.is_empty te then VarTable.remove vdest empty_key;
   vdest
 
-module DescrTable = Hashtbl.Make (Typ)
+let split_variables t =
+  let table = group_by_vars t in
+  reduce_variables table
+
 let is_any t = Typ.(subtype any t)
 let pcap l = match l with
     [] -> assert false
@@ -146,7 +157,7 @@ let pcap l = match l with
   | _ -> Cap l
 
 let pcup l = match l with
-  | [] -> assert false
+  | [] -> empty_
   | [ t ] -> t
   | _ -> Cup l
 
@@ -184,34 +195,41 @@ let decompile t =
       pname
     | exception Not_found ->
       DescrTable.add memo t None;
-      let do_complement = choose_complement t in
-      let res =
-        let t = if do_complement then Typ.neg t else t in
-        let var_table = group_by_vars t in
-        match VarTable.find_opt var_table (Var.Set.empty,Var.Set.empty) with
-          Some t ->
-          if is_any t then [any] else [pr_descr_no_var t]
-        | None ->
-          let acc = VarTable.fold (fun (vpos, vneg) t acc ->
-              let tacc = Var.Set.fold (fun v acc -> (var v) :: acc) vpos [] in
-              let tacc = Var.Set.fold (fun v acc -> (Neg (var v)) :: acc) vneg tacc in
-              let tacc = if is_any t then tacc else (pr_descr_no_var t) :: tacc in
-              (pcap (List.rev tacc)) :: acc)
-              var_table []
-          in acc
+      let var_table = split_variables t in
+      let acc, has_others  =
+        match VarTable.find_opt var_table Var.Set.(empty, empty) with
+          Some t -> if is_any t then [any], false else
+            begin
+              VarTable.remove var_table Var.Set.(empty, empty);
+              [ pr_choose_compl t ], true
+            end
+        | None -> [], true
       in
-      let res = match res, do_complement with
-          [], false -> empty_
-        | [], true -> any
-        | l, false -> pcup l
-        | l, true -> Diff(any, pcup l)
+      let acc = if not has_others then acc else
+          VarTable.fold (fun (vpos, vneg) t acc ->
+              if Typ.is_empty t then acc else
+                let tacc = Var.Set.fold (fun v acc -> (var v) :: acc) vpos [] in
+                let tacc = Var.Set.fold (fun v acc -> (Neg (var v)) :: acc) vneg tacc in
+                let tacc = if is_any t then tacc else (pr_choose_compl t) :: tacc in
+                (pcap (List.rev tacc)) :: acc)
+            var_table acc
       in
+      let res = pcup acc in
       match DescrTable.find memo t with
         None -> DescrTable.remove memo t; res
       | Some (n, _, pname) ->
-        DescrTable.replace memo t (Some (n,res, pname)); res
+        DescrTable.replace memo t (Some (n, res, pname)); res
   and pr_node n = pr_descr (Typ.descr n)
-  and pr_descr_no_var t =
+  and pr_choose_compl t =
+    let do_complement = choose_complement t in
+    let t = if do_complement then Typ.neg t else t in
+    let res = pr_no_var t in
+    match res, do_complement with
+      [], false -> empty_
+    | [], true -> any
+    | l, false -> pcup l
+    | l, true -> Diff (any, pcup l)
+  and pr_no_var t =
     let open Typ in
     let acc = [] in
     let acc = pbasic (module VarEnum) t acc in
@@ -230,9 +248,7 @@ let decompile t =
                                          and type Leaf.t = Product.Leaf.t)
         any_arrow pr_arrow_line t acc
     in
-    match acc with
-      [] -> empty_
-    |  l ->    pcup l
+    acc
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
       (module C : Base.Sigs.Bdd with type t = t and type atom = a and type Leaf.t = l)
@@ -240,6 +256,8 @@ let decompile t =
     if is_empty_comp (module V) t then acc
     else if is_any_comp (module V) t then any :: acc
     else
+      let () = Format.eprintf "Going to ARROW LINE CAUSE: %a is not empty\n%!" 
+      Typ.pp (V.set (V.get t) Typ.empty) in
       let dnf = get_leaf (module V) t in
       C.dnf dnf
       |> Seq.fold_left pr_line acc
@@ -261,6 +279,7 @@ let decompile t =
       | l -> Diff(posp, pcup l)
     in res :: acc
   and pr_arrow_line acc ((posa, nega),_) =
+    Format.eprintf "IN ARROW LINE\n%!";
     let arrow (n1, n2) = Arrow (pr_node n1, pr_node n2) in
     let posa = List.map arrow posa in
     let nega = List.map arrow nega in
@@ -281,7 +300,6 @@ let decompile t =
   match recs with
     [] -> res
   | _ -> Rec(res, recs)
-
 
 let global_print_table = DescrTable.create 16
 

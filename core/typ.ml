@@ -557,7 +557,8 @@ and check_single_neg_arrow stack t (n1, n2) pos =
             loop acc_t1 acc_t2' lpos
         end
   in
-  loop (descr n1) (neg (descr n2)) pos
+  loop (descr n1) (neg (descr n2))
+    (match pos with [] -> [ (node empty, node any) ] | _ -> pos)
 
 let is_empty t =
   let res =

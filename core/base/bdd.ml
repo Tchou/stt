@@ -50,15 +50,16 @@ module Make (X : Common.T) (L : Sigs.Set) = struct
   let hash = function False -> 0 | True { id; _ } -> id | Node { id; _ } -> id
   let compare t1 t2 = compare (hash t1) (hash t2)
 
-  let rec pp fmt t =
+  let rec pp dir fmt t =
     let open Format in
+    fprintf fmt "@[%s" (if dir then "+" else "-");
     match t with
-    | False -> fprintf fmt "@[False@]"
-    | True { id; leaf } -> fprintf fmt "@[True (%d,@[%a@])@]" id L.pp leaf
+    | False -> fprintf fmt "False@]"
+    | True { id; leaf } -> fprintf fmt "True (%d,@[%a@])@]" id L.pp leaf
     | Node { id; var; low; hi } ->
-      fprintf fmt "@[Node (@[%d,@ @[%a@],@ @[%a@],@ @[%a@]@])@]" id X.pp var
-        pp low pp hi
-
+      fprintf fmt "Node (@[%d,@ @[%a@],@ @[%a@],@ @[%a@]@])@]" id X.pp var
+        (pp false) low (pp true) hi
+  let pp fmt t = pp true fmt t
   module HNode = Hashtbl.Make (struct
       type nonrec t = t
 
@@ -191,7 +192,10 @@ module Make (X : Common.T) (L : Sigs.Set) = struct
         else if is_empty hi then loop acc_cup (atom false acc_cap var) low
         else
           let acc_cup = loop acc_cup (atom true acc_cap var) hi in
-          loop acc_cup (atom false acc_cap var) low
+          if is_any hi then
+            loop acc_cup acc_cap low  (* special case to generate smaller lines *)
+          else
+            loop acc_cup (atom false acc_cap var) low
     in
     loop empty any t
 
