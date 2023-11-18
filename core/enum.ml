@@ -25,8 +25,8 @@ let pp fmt (s:t) =
 let sample = function
   | `Finite s -> S.min_elt_opt s
   | `Cofinite s ->
-    let rec loop base i =
-      let atom = Hstring.cons (Hstring.(!!base) ^ string_of_int i) in
-      if S.mem atom s then loop base (i + 1) else atom
+    let rec loop base i suff =
+      let atom = Hstring.cons (Hstring.(!!base) ^ suff) in
+      if S.mem atom s then loop base (i + 1) (string_of_int i) else atom
     in
-    Some (loop (Hstring.cons "atom") 0)
+    Some (loop (Hstring.cons "cst") 0 "")
