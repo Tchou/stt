@@ -17,7 +17,7 @@ types.
 
 We want to show it is not empty (e.g. an inhabitant of that type is: 
 `[ [[]] [[]] ]`), so we explore it's structure until we can prove the type
-to be non empty. In what follows, "assume a type is empty" means record it has
+to be non empty. In what follows, "assume a type is empty" means record it as
 empty in the memoization table.
 
 1. Show that `(X, (X, []))` is not empty, assume it is:
@@ -37,18 +37,18 @@ empty in the memoization table.
    3. Update memo, `X` is non empty.
       We have learned that `X` is non empty, because of
       its `([], [])` component. However, we still
-      have memoized that `(X, [])` is empty in step 1.2.1
+      have memoized that `(X, [])` is empty in step 1.ii.a
       If we don't undo that, mayhem ensues:
 2. Show that `(X, [])` is not empty (second part of the
    product of the top-level type we are checking).
    From the memo table, `(X, [])` is empty (found in
-   1.2.1)
+   1.ii.a)
 3. One of the component of the product is empty, so
    the whole type is deduced to be empty.
 
-It shows that in 1.3, when coming back to `X`, we must undo the types we found
+It shows that in 1.iii, when coming back to `X`, we must undo the types we found
 empty that relied on the (wrongly assumed) fact that `X` was empty.
-Indeed, if in step 1.3 we correctly undo things and remove `(X, [])` from the
+Indeed, if in step 1.iii we correctly undo things and remove `(X, [])` from the
 memo table, then when doing 2., we will explore `(X, [])` again, this time with
 the (correct) hypothesis that `X` is non empty, and find that the whole product is
 non empty.
@@ -71,10 +71,10 @@ A sound and easy approximation of (*) is that we invalidate all types that were
 found empty during the descent. Frisch does something much more sophisticated
 and tracks the dependencies a bit differently and more precisely (this is the
 CPS style code in types.ml from CDuce and the combination section 7.1.3 and 7.2
-of his thesis). Types whose vacuity depend and the status of other types (in our
+of his thesis). Types whose vacuity depends and the status of other types (in our
 example `(X, [])` depends on `X`), are kept in a todo list and when all their
 dependencies are satisfied (here `X`) *and* if they are needed, then they are
-computed. This prevents both the "undoing" (backtracking).
+computed. This prevents the "undoing" (backtracking).
 
 Here, intuitively while descending the first time into `(X, [])` CDuce's code
 computes a closure
@@ -83,8 +83,8 @@ computes a closure
 ```
 which is kept in the memo table. When coming back the second time on `(X, [])`, then
 the algorithm computes `f ()`. Since at that moment the correct and final status of
-X is in the memo table, the function returns the correct result for that
-function.
+`X` is in the memo table, the function returns the correct result for that
+type.
 
 It is unclear whether building these intermediary closures is slower or faster
 than invalidated and re-exploring types. Also the code in CDuce is further complicated
