@@ -106,9 +106,13 @@ struct
     if c <> 0 then c else
       f ()
 
-  let (let|) o f =
+  let (let&) o f =
     match o with
       None -> None
     | Some x -> f x
 
+  let (let|) o f =
+    match o with
+      Some _ -> o
+    | None -> f ()
 end

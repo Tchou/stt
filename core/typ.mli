@@ -57,7 +57,7 @@ val num_components : int
 type component =
     Basic : (module Basic) -> component
   | Constr : (module Basic)*(module Constr) -> component
-  (** A type representing the operations of a component as a first class module. 
+  (** A type representing the operations of a component as a first class module.
       The [Constr] contains two copies of the same module,
       With the two constrained signatures
   *)
@@ -81,55 +81,13 @@ module Product : Base.Sigs.Bdd with type atom = Node.t * Node.t
 
 module VarProduct : Constr with type Leaf.t = Product.t
                             and type LeafBdd.t = Product.t
+                            and type LeafBdd.atom = Product.atom
 module VarArrow : Constr with type Leaf.t = Product.t
                           and type LeafBdd.t = Product.t
+                          and type LeafBdd.atom = Product.atom
+
 (** The constr components. Arrows have the same internal representation as
     products but a different interpretation.*)
-
-
-(** {2:comp-get Component accessors }*)
-
-module Get : sig
-  val enum : t -> VarEnum.t
-  (** [atom t] returns the atom component of a type [t]. *)
-
-  val int : t -> VarInt.t
-  (** [int t] returns the integer component of a type [t]. *)
-
-  val char : t -> VarChar.t
-  (** [char t] returns the char component of a type [t]. *)
-
-  val unit : t -> VarUnit.t
-  (** [unit t] returns the unit component of a type [t]. *)
-
-  val product : t -> VarProduct.t
-  (** [product t] returns the product component of a type [t]. *)
-
-  val arrow : t -> VarProduct.t
-  (** [arrow t] returns the arrow component of a type [t]. *)
-end
-(** Allows one to retrieve the component of a type as a BDD. *)
-
-module Set : sig
-  val enum : VarEnum.t -> t -> t
-  (** [atom t] updates the atom component of a type [t]. *)
-
-  val int : VarInt.t -> t -> t
-  (** [int t] updates the integer component of a type [t]. *)
-
-  val char : VarChar.t -> t -> t
-  (** [char t] updates the char component of a type [t]. *)
-
-  val unit : VarUnit.t -> t -> t
-  (** [unit t] updates the unit component of a type [t]. *)
-
-  val product : VarProduct.t -> t -> t
-  (** [product t] updates the product component of a type [t]. *)
-
-  val arrow : VarProduct.t -> t -> t
-  (** [arrow t] updates the arrow component of a type [t]. *)
-end
-(** Allows one to update the component of a type with a BDD. *)
 
 
 (** {1:type-alg Type algebra }*)
@@ -311,11 +269,49 @@ val single_var : t -> (Var.t * bool) option
 
 (** {1:sub Subtyping} *)
 
+module Witness : sig
+  type const =
+      Int of Int.elem
+    | Enum of Enum.elem
+    | Char of Char.elem
+    | Unit of Unit.elem
+    | Pair of (t * t)
+    | Arrow of descr
+  and t = (Var.t list * Var.t list) * const
+  (** Type [t] represents a witness, that is an inhabitant of a type.
+      Polymorphic types have witnesses marked with their variables. *)
+
+  include Base.Common.T with type t := t
+end
+type elem = Witness.t
+(** An alias for the type of witnesses which allows the module [Typ] to
+    implement [Base.Sigs.Set].
+  *)
+
 val is_empty : t -> bool
 (** [is_empty t] is [true] if and only if [t] is empty. *)
+
+val is_any : t -> bool
+(** [is_any t] is [true] if and only if [t] is top. *)
 
 val subtype : t -> t -> bool
 (** [subtype s t] is [true] if and only if [s] ≤ [t]. *)
 
 val equiv : t -> t -> bool
 (** [equiv s t] is [true] if and only if [s] ≤ [t] and [t] ≤ [s]. *)
+
+val sample : t -> Witness.t option
+(** [sample t] returns [None] if the [t] is empty and [Some w] otherwise,
+    where [w] is an inhabitant of [t]. *)
+
+val intersect : t -> t -> bool
+(** [intersect t1 t2] is [true] if and only if [t1] and [t2] have a non-empty
+    intersection. *)
+
+val mem : Witness.t -> t -> bool
+(** [mem w t] is [true] if and only if [w] belongs to [t]. *)
+
+(** {1:misc Miscellaneous definitions }*)
+
+module DescrTable : Hashtbl.S with type key = t
+module NodeTable : Hashtbl.S with type key = Node.t
