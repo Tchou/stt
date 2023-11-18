@@ -1,10 +1,16 @@
 open Base
+let utf_8_byte_length u = 
+  let u = Uchar.to_int u in
+  if u <= 0x007f then 1
+  else if u <= 0x07ff then 2
+  else if u <= 0xffff then 3
+  else 4
 
 let pp_char fmt u =
   let open Uchar in
   let i = to_int u in
   if
-    (i >= 0x00 && i < 0x1f)
+    i < 0x1f
     || i == 0x7f
     || (i >= 0x80 && i <= 0x9f)
     || i >= 0x40000
@@ -15,10 +21,10 @@ let pp_char fmt u =
     Format.pp_print_bytes fmt b
 
 include Interval.Make (struct
-  include Uchar
-  let name = "Uchar"
-  let pp = pp_char
-end)
+    include Uchar
+    let name = "Uchar"
+    let pp = pp_char
+  end)
 
 let name = "Char"
 
