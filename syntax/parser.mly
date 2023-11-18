@@ -152,19 +152,19 @@ simple_typ_:
     let open Stt in
     let t =
         match i1, i2 with
-            None, None -> Typ.(Set.int VarInt.any empty)
-            | Some i1, None -> Typ.(Set.int (VarInt.leaf (Int.right i1)) empty)
-            | None, Some i2 -> Typ.(Set.int (VarInt.leaf (Int.left i2)) empty)
-            | Some i1, Some i2 -> Typ.(Set.int (VarInt.leaf (Int.range i1 i2)) empty)
+            None, None -> Typ.(VarInt.set VarInt.any empty)
+            | Some i1, None -> Typ.(VarInt.set (VarInt.leaf (Int.right i1)) empty)
+            | None, Some i2 -> Typ.(VarInt.set (VarInt.leaf (Int.left i2)) empty)
+            | Some i1, Some i2 -> Typ.(VarInt.set (VarInt.leaf (Int.range i1 i2)) empty)
     in `Typ t
 }
 
 |   c = CHAR { `Typ (Stt.Typ.Singleton.char c)   }
 |   c1 = CHAR; "--"; c2 = CHAR {
-    `Typ Stt.Typ.(Set.char (VarChar.leaf (Stt.Char.range c1 c2)) empty)}
+    `Typ Stt.Typ.(VarChar.set (VarChar.leaf (Stt.Char.range c1 c2)) empty)}
 
 
-|   a = ENUM { `Typ (Stt.Typ.(Set.enum (VarEnum.leaf  (Stt.Enum.singleton a)) empty))   }
+|   a = ENUM { `Typ (Stt.Typ.(VarEnum.set (VarEnum.leaf (Stt.Enum.singleton a)) empty))   }
 |   s = STRING {
         let open Stt.Typ in
         let t = ref (Stt.Builtins.nil) in

@@ -1,10 +1,12 @@
+type absent = |
+
 type  ('te, 'ident) decl =
   { name :  'ident;
     params : 'ident list;
     expr : 'te }
 
 module Open = struct
-  type ('te, 'ident, 're, 'extra) typ = [
+  type ('te, 'ident, 'var, 're, 'extra) typ = [
     (* Basic types *)
     | `Typ of Stt.Typ.t
     (* Constructors *)
@@ -16,7 +18,7 @@ module Open = struct
     | `Diff of 'te * 'te
     | `Neg of 'te
     (* Polymorphic variable *)
-    | `Var of 'ident
+    | `Var of 'var
     (* Regexp *)
     | `Regexp of 're
     (* Type nodes (instantiation and recursive types) *)
@@ -46,17 +48,8 @@ end
 module Located =
 struct
   type ident = Ident.t Loc.located
-  type typ = (typ, ident, re, unit) Open.typ Loc.located
+  type typ = (typ, ident, ident, re, absent) Open.typ Loc.located
   and node = (typ, ident) Open.node
   and re = (typ, re) Open.re Loc.located
   type nonrec decl = (typ, ident) decl
-end
-
-module Simple =
-struct
-  type ident = Ident.t
-  type 'a typ = ('a typ, ident, 'a re, 'a) Open.typ
-  and 'a node = ('a typ, ident) Open.node
-  and 'a re = ('a typ, 'a re) Open.re
-  type nonrec 'a decl = ('a typ, ident) decl
 end

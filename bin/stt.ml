@@ -21,14 +21,17 @@ let main () =
     | Ok (has_next, td) ->
       let td, nglobal = Syntax.Typing.type_decl global td in
       let t0 = Unix.gettimeofday () in
-      let is_empty = Stt.Typ.is_empty td.typ in
+      let w = Stt.Typ.sample td.typ in
       let t1 = Unix.gettimeofday () in
       let open Format in
       eprintf "@[%a@]@\n" Syntax.Typing.GlobalDecl.pp td;
-      eprintf "--@\n@[%a@]@\n@[%a@]@\nis_empty: %b in %fms@\n----@\n"
+      eprintf "--@\n@[%a@]@\n@[%a@]@\nis_empty: @[%a@] in %fms@\n----@\n"
         Stt.Typ.pp td.typ
         Syntax.Pretty.pp td.typ
-        is_empty   (1000. *. (t1 -. t0));
+        (fun fmt o -> match o with
+             None -> fprintf fmt "None"
+           | Some w -> fprintf fmt "Some (@[%a@])" Stt.Typ.Witness.pp w)
+        w  (1000. *. (t1 -. t0));
       if has_next then loop nglobal
     | Error msg -> Printf.eprintf "ERROR: %s\n" msg
   in  loop Syntax.Typing.default

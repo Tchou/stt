@@ -242,7 +242,7 @@ let derecurse global te =
     | `Regexp re ->
       (do_loop (Re_compile.compile re)).descr
     | `Node r -> `Node (loop_node collect params env r)
-    | `Extra () -> `Extra ()
+    | `Extra _ -> .
   and loop_node collect params env r =
     let rnode = !r in
     match rnode with
@@ -325,7 +325,7 @@ let expand te =
     | `Diff (t1, t2) -> `Diff (loop t1, loop t2)
     | `Neg t -> `Neg (loop t)
     | `Node r -> `Node (follow te.loc r)
-    | `Extra () -> `Extra ()
+    | `Extra _ -> .
   and follow loc (r : Ast.Located.node ref) =
     try
       let visiting = Memo.find memo r in
@@ -370,7 +370,7 @@ let build_type var_map te =
        with Not_found -> error ~loc:te.Loc.loc "Unbound polymorphic variable '%s"
                            Ident.(!!(lident.descr)))
     | `Regexp _ -> assert false
-    | `Extra () -> assert false
+    | `Extra _ -> .
     | `Node r -> begin
         match Memo.find memo r with
         | None -> let n = make () in Memo.replace memo r (Some n); n
