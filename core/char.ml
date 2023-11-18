@@ -1,10 +1,4 @@
 open Base
-let utf_8_byte_length u = 
-  let u = Uchar.to_int u in
-  if u <= 0x007f then 1
-  else if u <= 0x07ff then 2
-  else if u <= 0xffff then 3
-  else 4
 
 let pp_char fmt u =
   let open Uchar in
@@ -14,11 +8,11 @@ let pp_char fmt u =
     || i == 0x7f
     || (i >= 0x80 && i <= 0x9f)
     || i >= 0x40000
-  then Format.fprintf fmt "\\u%x" i
+  then Format.fprintf fmt "\\u{%04x}" i
   else
-    let b = Bytes.create (utf_8_byte_length u) in
-    ignore (Bytes.set_utf_8_uchar b 0 u);
-    Format.pp_print_bytes fmt b
+    let b = Buffer.create 4 in
+    let () = Buffer.add_utf_8_uchar b u in
+    Format.pp_print_string fmt (Buffer.contents b)
 
 include Interval.Make (struct
     include Uchar

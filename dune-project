@@ -21,8 +21,8 @@
 (package
  (name stt)
  (synopsis "Set Theoretic Types")
- (description "A library to manipulate Set Theoretic Types in a generic way")
- (depends ocaml dune zarith menhir menhirLib sedlex)
+ (description "A library to manipulate Set Theoretic Types")
+ (depends (ocaml (>= 4.08.0)) dune zarith menhir menhirLib sedlex)
  (tags (types)))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

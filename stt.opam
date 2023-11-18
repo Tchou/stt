@@ -10,7 +10,7 @@ homepage: "https://github.com/Tchou/stt"
 doc: "https://url/to/documentation"
 bug-reports: "https://github.com/Tchou/stt/issues"
 depends: [
-  "ocaml"
+  "ocaml" {>= "4.08.0"}
   "dune" {>= "3.7"}
   "zarith"
   "menhir"
