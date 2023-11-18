@@ -1,3 +1,5 @@
+# Semantic sub-typing
+## Recursive types
 Assume a type
 ```
 (X, (X, [])) where X = (X, []) | ([], [])
