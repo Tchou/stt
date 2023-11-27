@@ -79,7 +79,7 @@ computed. This prevents the "undoing" (backtracking).
 Here, intuitively while descending the first time into `(X, [])` CDuce's code
 computes a closure
 ```
- f = (fun () -> is_empty memo X && is_empty memo [])
+ f = (fun () -> is_empty memo X || is_empty memo [])
 ```
 which is kept in the memo table. When coming back the second time on `(X, [])`, then
 the algorithm computes `f ()`. Since at that moment the correct and final status of
