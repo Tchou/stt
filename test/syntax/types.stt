@@ -2,10 +2,12 @@ type digit = '0'--'9'
 type letter = 'A'--'Z' | 'a'--'z'
 type start_char = letter | '_'
 
-type ident = [ start_char; (start_char | digit) * ]
+type ident = [ start_char; (start_char | digit) * ] \ "_"
+
 
 type a = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_"
 type c = a \ ident
+
 
 type e = [ start_char+; ('0'--'4' | start_char)+ ; (('_'* | letter;letter;letter)?)+]
 
@@ -16,7 +18,7 @@ type d = e \ ident
 type s ('a, 'b) = ('a & (Int -> Int)) | (Int -> 'b)
 #type u = t \ t
 #type v = ((Int -> Int) & (Bool -> Bool)) \ ((Int -> Any)|(`true -> Any))
-
+type t = s (Int, Bool)
 
 #type t = (Int -> Int) | (Char -> Char)
 type h ('a) =
