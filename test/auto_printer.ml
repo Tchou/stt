@@ -40,7 +40,7 @@ let format_auto fmt t =
     let todo = 
       norm |>
       List.fold_left (fun acc (t1, t2) ->
-          let q', acc = match List.find_opt (fun (t', _) -> Typ.equiv t2 t') !states with
+          let q', acc = match List.find_opt (fun (t', _) -> Typ.equiv t2 t') (!states@acc) with
               None -> let q = state () in q, (t2,q)::acc
             | Some (_, q') -> q', acc
           in
@@ -97,14 +97,17 @@ ou expression entièrement vide
 *)
 let main () =
   let l = [ 
-    "type t0 = [ Int ]";
+    "type t0 = [ `A;`B;`C ]";
     "type t1 = [ Int*; Int ]";
     "type t2 = [ (Int|Bool)*; Int ]";
     "type t3 = [ Bool;Bool+ ]";
     "type t4 = [ ((`A|`B); Int)+ ]";
     "type t5 = t0 | [ Bool ]";
     "type t6 = t0 | []";
-    "type t7 = []" ]
+    "type t7 = []";
+    "type t8 = [ ((`A|`B)*; `A*;`C)+ ]";
+
+    ]
   in
   List.fold_left (fun (i, env) s ->
       let path = Format.sprintf "auto%03d.txt" i in
