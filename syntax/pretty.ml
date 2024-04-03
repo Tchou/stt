@@ -256,8 +256,8 @@ let decompile t =
     if is_empty_comp (module V) t then acc
     else if is_any_comp (module V) t then any :: acc
     else
-      let () = Format.eprintf "Going to ARROW LINE CAUSE: %a is not empty\n%!" 
-      Typ.pp (V.set (V.get t) Typ.empty) in
+      (*let () = Format.eprintf "Going to ARROW LINE CAUSE: %a is not empty\n%!" 
+      Typ.pp (V.set (V.get t) Typ.empty) in*)
       let dnf = get_leaf (module V) t in
       C.dnf dnf
       |> Seq.fold_left pr_line acc
@@ -279,7 +279,7 @@ let decompile t =
       | l -> Diff(posp, pcup l)
     in res :: acc
   and pr_arrow_line acc ((posa, nega),_) =
-    Format.eprintf "IN ARROW LINE\n%!";
+    (*Format.eprintf "IN ARROW LINE\n%!"; *)
     let arrow (n1, n2) = Arrow (pr_node n1, pr_node n2) in
     let posa = List.map arrow posa in
     let nega = List.map arrow nega in
