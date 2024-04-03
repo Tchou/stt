@@ -288,6 +288,9 @@ type elem = Witness.t
     implement [Base.Sigs.Set].
   *)
 
+val singleton : elem -> t
+(** [singleton w] creates a type from a witness *)
+
 val is_empty : t -> bool
 (** [is_empty t] is [true] if and only if [t] is empty. *)
 

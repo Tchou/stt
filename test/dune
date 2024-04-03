@@ -1,4 +1,12 @@
 (test
  (name main)
+ (modules :standard \ auto_printer)
  (libraries stt zarith)
+ (empty_module_interface_if_absent))
+
+
+(test
+ (name auto_printer)
+ (modules auto_printer)
+ (libraries stt zarith stt.syntax menhirLib sedlex)
  (empty_module_interface_if_absent))

@@ -80,7 +80,7 @@ module Make (X : Common.T) (L : Sigs.Set) = struct
         | Node { var; low; hi; _ } ->
           let hl = hash low in
           let hh = hash hi in
-          X.hash var + ((hl lsl 4) + hl) + ((hh lsl 16) + hl)
+          X.hash var + ((hl lsl 4) + hl) + ((hh lsl 16) + hh)
     end)
 
   let memo_node = HNode.create 16

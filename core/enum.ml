@@ -4,14 +4,18 @@ include FiniteCofinite.Make (Hstring)
 let pp_enum fmt (s: Hstring.t) = Format.fprintf fmt "`%s" Hstring.(!!s)
 
 let name = "Enum"
-
+let bool = S.of_list [
+    (Hstring.cons "true");
+    (Hstring.cons "false")
+  ]
 let pp fmt (s:t) =
   let open Format in
   let c, s = match s with `Finite s -> false, s | `Cofinite s -> true, s in
   let l = S.elements s in
   fprintf fmt "@[";
-  if c then fprintf fmt "%s" name;
-  let () =
+  if S.equal s bool then fprintf fmt "Bool"
+  else begin
+    if c then fprintf fmt "%s" name;
     match l with
     | [] -> if not c then fprintf fmt "Empty"
     | _ :: ll ->
@@ -19,7 +23,7 @@ let pp fmt (s:t) =
       if c && ll <> [] then fprintf fmt "(";
       pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "|") pp_enum fmt l;
       if c && ll <> [] then fprintf fmt ")"
-  in
+  end;
   fprintf fmt "@]"
 
 let sample = function
