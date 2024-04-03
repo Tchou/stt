@@ -71,7 +71,7 @@ end = struct
         (fst r1 || fst r2,`Re_alt (r1, r2))
       | `Re_concat (r1, r2) ->
         let r1 = unique r1 in let r2 = unique r2 in
-        (fst r1 && fst r2,`Re_alt (r1, r2))
+        (fst r1 && fst r2,`Re_concat (r1, r2))
       | `Re_star r -> true,`Re_star (unique r)
     in
     let start = mk_name () in
