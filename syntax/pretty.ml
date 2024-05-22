@@ -236,6 +236,28 @@ let decompile t =
     let acc = pbasic (module VarInt) t acc in
     let acc = pbasic (module VarChar) t acc in
     let acc = pbasic (module VarUnit) t acc in
+    let acc =
+      let tp = Typ.(cap t @@ product (node any) (node any)) in
+      if Typ.(is_any tp || is_empty tp) then
+        acc
+      else begin
+        let any_star =
+          let open Typ in
+          let x = make () in
+          let p = product (node any) x in
+          let c = cup Builtins.nil p in
+          let () = def x c in
+          c
+        in
+        let _ts = Typ.cap tp any_star in
+        (* if Typ.is_empty ts then begin
+          let tmp = Typ.empty in
+          tmp :: (Typ.diff tp ts) :: acc
+        end else
+          tp :: acc *)
+        acc
+      end
+    in
     let acc = pr_constr (module VarProduct : Basic with type Leaf.t = Product.t)
         (module Product : Base.Sigs.Bdd with type t = Product.t
                                          and type atom = Product.atom
