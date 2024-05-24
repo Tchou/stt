@@ -136,47 +136,6 @@ let add_ends (automaton : t)
 
 
 
-let to_dot (automaton : t)
-           (file_name : string) : unit =
-  let file = open_out (file_name ^ ".dot") in
-  Printf.fprintf file "digraph automaton\n{\n" ;
-  let i = ref 0 in
-  StateSet.iter ( 
-    fun (state : state) : unit -> 
-      Printf.fprintf file "  __INVISIBLE_NODE_%d__ [label= \"\", shape=none,height=.0,width=.0] ;\n" !i ;
-      Printf.fprintf file "  __INVISIBLE_NODE_%d__ -> %d ;\n" !i state ;
-      i := !i + 1
-  ) 
-  automaton.starts ;
-  StateSet.iter ( 
-    fun (state : state) : unit ->
-      Printf.fprintf file "  %d [peripheries=2] ;\n" state 
-  ) 
-  automaton.ends ;
-  (* Not TransSet iter because I want to merge all transitions between two states *)
-  StateSet.iter (
-    fun (state1 : state) : unit ->
-      StateSet.iter (
-        fun (state2 : state) : unit ->
-          let letters = List.map (
-            fun (_, letter, _ : trans) : string -> 
-              Format.asprintf "%a" Pretty.pp letter
-          ) 
-            @@ TransSet.to_list 
-            @@ get_transition_between automaton.trans state1 state2 
-          in
-          let letter = String.concat ", " letters in
-          if letter <> "" then 
-            Printf.fprintf file "  %d -> %d [label=\"%s\"] ;\n" state1 state2 letter
-      )
-      automaton.states
-  ) 
-  automaton.states ;
-  Printf.fprintf file "}" ;
-  close_out file
-
-
-
 let determinize (automaton : t) : t = automaton
 (*
 let determinize (automaton : t) : t =
@@ -446,6 +405,8 @@ let check_word (automaton : t)
     automaton.starts word
   in
   StateSet.exists (Fun.flip StateSet.mem @@ automaton.ends) end_states
+
+
 
 let to_regex_my (automaton: t) : regexp =
   (* States renaming *)

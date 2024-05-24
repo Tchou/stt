@@ -3,8 +3,7 @@ open Stt
 module Name = Base.Hstring
 
 module Regexp = Tmp.Regexp
-type regexp = Regexp.t_simp
-module Automaton = Tmp.Automaton
+type regexp = Regexp.t_ext
 
 type t_descr =
     Printer of (formatter -> unit)
@@ -71,7 +70,7 @@ let rec pr ?(assoc=true) parent_level  ppf t =
     | Cap l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" &" level) l
     | Diff (t1, t2) -> fprintf ppf "%a@ \\@ %a" (pr level) t1 (pr ~assoc:false level) t2
     | Neg t -> fprintf ppf "~%a" (pr level) t
-    | Regexp r -> fprintf ppf "%s" @@ Regexp.(pp @@ simp_to_ext r)
+    | Regexp r -> fprintf ppf "%s" @@ Regexp.pp r
     (*
     | Apply (n, args) -> fprintf ppf "%s (@[%a@])" Name.(!!n) (pr_list_sep ~sep:"," Prio.lowest) args
     *)
@@ -275,27 +274,24 @@ let decompile t =
     let acc = pbasic (module VarChar) t acc in
     let acc = pbasic (module VarUnit) t acc in
     let acc =
-      let tp = Typ.(cap t @@ product (node any) (node any)) in
+      let tp = cap t @@ product (node any) (node any) in
       if Typ.(is_any tp || is_empty tp) then
         acc
-      else begin
+      else
         let any_star =
-          let open Typ in
           let x = make () in
           let p = product (node any) x in
           let c = cup Builtins.nil p in
           let () = def x c in
           c
         in
-        let ts = Typ.cap tp any_star in
-        if Typ.is_empty ts then
-          (* tp :: acc *)
+        let ts = cap tp any_star in
+        if is_empty ts then
+          (* tp :: acc (?) *)
           acc
         else
-          (* let tmp = Typ.empty in
-          tmp :: (Typ.diff tp ts) :: acc *)
+          (* Somewhere : diff tp ts *)
           Regexp (pr_regexp ts) :: acc
-      end
     in
     let acc = pr_constr (module VarProduct : Basic with type Leaf.t = Product.t)
         (module Product : Base.Sigs.Bdd with type t = Product.t
@@ -321,7 +317,7 @@ let decompile t =
     *)
 
     (* Place holder *)
-    Regexp.(concat (letter Stt.Typ.any) (letter t))
+    Regexp.(simp_to_ext @@ concat (letter Stt.Typ.any) (letter t))
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
       (module C : Base.Sigs.Bdd with type t = t and type atom = a and type Leaf.t = l)
