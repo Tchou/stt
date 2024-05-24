@@ -33,3 +33,5 @@ _opam/
 syntax/*.conflicts
 
 bin/stt.exe
+
+*/node_modules/
