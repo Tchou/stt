@@ -4,7 +4,6 @@
  (libraries stt zarith)
  (empty_module_interface_if_absent))
 
-
 (test
  (name auto_printer)
  (modules auto_printer)

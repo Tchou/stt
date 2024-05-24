@@ -1,7 +1,10 @@
 open Format
 open Stt
 module Name = Base.Hstring
-type regexp = |
+
+module Regexp = Tmp.Regexp
+type regexp = Regexp.t_simp
+module Automaton = Tmp.Automaton
 
 type t =
     Printer of (formatter -> unit)
@@ -53,6 +56,7 @@ let rec pr ?(assoc=true) parent_level  ppf t =
     | Cap l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" &" level) l
     | Diff (t1, t2) -> fprintf ppf "%a@ \\@ %a" (pr level) t1 (pr ~assoc:false level) t2
     | Neg t -> fprintf ppf "~%a" (pr level) t
+    | Regexp r -> fprintf ppf "%s" @@ Regexp.(pp @@ simp_to_ext r)
     (*
     | Apply (n, args) -> fprintf ppf "%s (@[%a@])" Name.(!!n) (pr_list_sep ~sep:"," Prio.lowest) args
     *)
@@ -253,10 +257,12 @@ let decompile t =
         in
         let ts = Typ.cap tp any_star in
         if Typ.is_empty ts then
-          tp :: acc
+          (* tp :: acc *)
+          acc
         else
-          let tmp = Typ.empty in
-          tmp :: (Typ.diff tp ts) :: acc
+          (* let tmp = Typ.empty in
+          tmp :: (Typ.diff tp ts) :: acc *)
+          Regexp (pr_regexp ts) :: acc
       end
     in
     let acc = pr_constr (module VarProduct : Basic with type Leaf.t = Product.t)
@@ -272,6 +278,18 @@ let decompile t =
         any_arrow pr_arrow_line t acc
     in
     acc
+  and pr_regexp t =
+    (* 
+
+      - Need to use pr_descr (why?)
+      - Be aware of variables (how to get rid of/ignore them?)
+
+      Need to rethink about the algo 
+
+    *)
+
+    (* Place holder *)
+    Regexp.(concat (letter Stt.Typ.any) (letter t))
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
       (module C : Base.Sigs.Bdd with type t = t and type atom = a and type Leaf.t = l)
