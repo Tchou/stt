@@ -1,6 +1,7 @@
 open Format
 open Stt
 module Name = Base.Hstring
+type regexp = |
 
 type t_descr =
     Printer of (formatter -> unit)
@@ -10,6 +11,7 @@ type t_descr =
   | Cap of t list
   | Diff of t * t
   | Neg of t
+  | Regexp of regexp
   (*  | Apply of Name.t * t list *)
   | Rec of t * (Name.t * t) list
 and t = { typ : Typ.t ;
@@ -30,7 +32,7 @@ struct
     | Neg _-> 9
     | Cap _ | Diff _ -> 8
     | Cup _ -> 7
-    | Arrow _ -> 6
+    | Arrow _ | Regexp _ -> 6
     | Rec _ -> 5
 end
 
@@ -281,13 +283,12 @@ let decompile t =
           let () = def x c in
           c
         in
-        let _ts = Typ.cap tp any_star in
-        (* if Typ.is_empty ts then begin
+        let ts = Typ.cap tp any_star in
+        if Typ.is_empty ts then
+          tp :: acc
+        else
           let tmp = Typ.empty in
           tmp :: (Typ.diff tp ts) :: acc
-        end else
-          tp :: acc *)
-        acc
       end
     in
     let acc = pr_constr (module VarProduct : Basic with type Leaf.t = Product.t)
