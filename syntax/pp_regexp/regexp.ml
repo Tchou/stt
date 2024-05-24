@@ -1,4 +1,5 @@
-type lt = Stt.Typ.t
+module Typ = Stt.Typ
+type lt = Typ.t
 
 type t_simp =
   | S_Empty
@@ -86,7 +87,11 @@ let pp (r : t_ext) : string =
   let rec loop (r : t_ext) : string =
     match r with
     | Letter l ->
-      Lt.pp l
+      let buf = Buffer.create 16 in
+      let fmt = Format.formatter_of_buffer buf in
+      let () = Syntax.Pretty.pp fmt l in
+      let () = Format.pp_print_newline fmt () in
+      ""
     | Concat l ->
       String.concat ";" @@ List.map loop l
     | Union l ->
@@ -148,19 +153,19 @@ let simplify (r : t_ext) : t_ext =
             else
               List.cons r1 @@ loop @@ r2 :: l
           | Letter lt1, Letter lt2 ->
-              if Lt.is_epsilon lt1 then
+              if Typ.is_empty lt1 then
                 loop @@ r2 :: l
-              else if Lt.is_epsilon lt2 then
+              else if Typ.is_empty lt2 then
                 loop @@ r1 :: l
               else
                 List.cons r1 @@ loop @@ r2 :: l
           | Letter lt, _ ->
-            if Lt.is_epsilon lt then
+            if Typ.is_empty lt then
               loop @@ r2 :: l
             else
               List.cons r1 @@ loop @@ r2 :: l
           | _, Letter lt ->
-            if Lt.is_epsilon lt then
+            if Typ.is_empty lt then
               loop @@ r1 :: l
             else
               List.cons r1 @@ loop @@ r2 :: l
@@ -184,7 +189,7 @@ let simplify (r : t_ext) : t_ext =
           let (all_eps, without_eps) = List.partition (
             fun (r : t_ext) : bool ->
               match r with 
-              | Letter lt -> Lt.is_epsilon lt 
+              | Letter lt -> Typ.is_empty lt 
               | _ -> false
           ) 
           unique_l
@@ -318,7 +323,7 @@ let simplify (r : t_ext) : t_ext =
       begin
         match simp r with
         | Letter l ->
-          if Lt.is_epsilon l then
+          if Typ.is_empty l then
             Letter l
           else
             Star (Letter l)
@@ -331,7 +336,7 @@ let simplify (r : t_ext) : t_ext =
       begin
         match simp r with
         | Letter l ->
-          if Lt.is_epsilon l then
+          if Typ.is_empty l then
             Letter l
           else
             Plus (Letter l)
@@ -344,7 +349,7 @@ let simplify (r : t_ext) : t_ext =
       begin
         match simp r with
         | Letter l ->
-          if Lt.is_epsilon l then
+          if Typ.is_empty l then
             Letter l
           else
             Option (Letter l)
