@@ -24,8 +24,8 @@ let is_empty (r : t_simp) : bool =
 
 
 
-let letter (l : lt) : t_simp =
-  S_Letter l
+let letter (t : lt) : t_simp =
+  S_Letter t
 
 let concat (r1 : t_simp) 
            (r2 : t_simp) : t_simp =
@@ -43,7 +43,7 @@ let star (r : t_simp) : t_simp =
 let rec simp_to_ext (r : t_simp) : t_ext =
   match r with
   | S_Empty -> failwith "Can't convert the empty regex"
-  | S_Letter l -> Letter l
+  | S_Letter t -> Letter t
   | S_Concat (r1, r2) -> Concat [simp_to_ext r1; simp_to_ext r2]
   | S_Union (r1, r2) -> Union [simp_to_ext r1; simp_to_ext r2]
   | S_Star r -> Star (simp_to_ext r)
@@ -86,12 +86,8 @@ let rec flatten (r : t_ext) : t_ext =
 let pp (r : t_ext) : string =
   let rec loop (r : t_ext) : string =
     match r with
-    | Letter l ->
-      let buf = Buffer.create 16 in
-      let fmt = Format.formatter_of_buffer buf in
-      let () = Syntax.Pretty.pp fmt l in
-      let () = Format.pp_print_newline fmt () in
-      ""
+    | Letter t ->
+      Format.asprintf "%a" Syntax.Pretty.pp t
     | Concat l ->
       String.concat ";" @@ List.map loop l
     | Union l ->
@@ -253,7 +249,7 @@ let simplify (r : t_ext) : t_ext =
                       max_left := List.map (
                         fun (left : t_ext option) : t_ext ->
                           match left with
-                          | None -> Letter Lt.epsilon
+                          | None -> Letter Typ.empty
                           | Some r -> r
                       )
                       all_left ;
@@ -308,7 +304,7 @@ let simplify (r : t_ext) : t_ext =
               res
           | _ -> (* at least one (singleton because we got rid of duplicates) *)
             match without_eps with
-            | [] -> Letter Lt.epsilon (* it was an union of espilon (why not) *)
+            | [] -> Letter Typ.empty (* it was an union of espilon (why not) *)
             | r :: [] -> simp @@ Option r
             | _ -> 
               let res, is_factorized = factorize @@ Union without_eps in
