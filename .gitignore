@@ -34,4 +34,7 @@ syntax/*.conflicts
 
 bin/stt.exe
 
+# Romain's fork
 */node_modules/
+dune
+test.*
