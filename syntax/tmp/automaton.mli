@@ -37,11 +37,6 @@ val add_ends : t -> int list -> t
 (** [add_ends automaton states] sets several states as end states in [automaton] *)
 
 
-val to_dot : t -> string -> unit
-(** [to_dot automaton file_name] creates a dot file named "[file_name].dot"
-  representing [automaton] *)
-
-
 val determinize : t -> t
 (** [determinize automaton] returns an automaton which is the DFA version of [automaton].
   If [automaton] has n states, the DFA automaton has at most 2^n states.
@@ -51,12 +46,6 @@ val determinize : t -> t
   - Has no epsilon-transitions ;
   - For all states, there exists one and only one transition labelled by a same letter from it.
      For instance, if we have (1, "a", 2) and (1, "a", 3), then it isn't deterministic *)
-(* val get_rid_of_unreachable_states : t -> t *)
-(** [get_rid_of_unreachable_states automaton] returns [automaton] without unreachable states *)
-(* val minimize : t -> t *)
-(** [minimize automaton] returns a minimized version of [automaton], the smallest possible 
-
-  [automaton] must be a DFA without unreachable states *)
 
 
 val check_word : t -> Stt.Typ.t list -> bool
