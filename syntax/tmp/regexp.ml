@@ -1,14 +1,11 @@
-module Typ = Stt.Typ
-type lt = Typ.t
-
 type t_simp =
   | S_Empty
-  | S_Letter of lt
+  | S_Letter of Stt.Typ.t
   | S_Concat of t_simp * t_simp
   | S_Union of t_simp * t_simp
   | S_Star of t_simp
 type t_ext =
-  | Letter of lt
+  | Letter of Stt.Typ.t
   | Concat of t_ext list
   | Union of t_ext list
   | Star of t_ext
@@ -24,7 +21,7 @@ let is_empty (r : t_simp) : bool =
 
 
 
-let letter (t : lt) : t_simp =
+let letter (t : Stt.Typ.t) : t_simp =
   S_Letter t
 
 let concat (r1 : t_simp) 
@@ -87,7 +84,7 @@ let pp (r : t_ext) : string =
   let rec loop (r : t_ext) : string =
     match r with
     | Letter t ->
-      Format.asprintf "%a" Syntax.Pretty.pp t
+      Format.asprintf "%a" Pretty.pp t
     | Concat l ->
       String.concat ";" @@ List.map loop l
     | Union l ->
@@ -149,19 +146,19 @@ let simplify (r : t_ext) : t_ext =
             else
               List.cons r1 @@ loop @@ r2 :: l
           | Letter lt1, Letter lt2 ->
-              if Typ.is_empty lt1 then
+              if Stt.Typ.is_empty lt1 then
                 loop @@ r2 :: l
-              else if Typ.is_empty lt2 then
+              else if Stt.Typ.is_empty lt2 then
                 loop @@ r1 :: l
               else
                 List.cons r1 @@ loop @@ r2 :: l
           | Letter lt, _ ->
-            if Typ.is_empty lt then
+            if Stt.Typ.is_empty lt then
               loop @@ r2 :: l
             else
               List.cons r1 @@ loop @@ r2 :: l
           | _, Letter lt ->
-            if Typ.is_empty lt then
+            if Stt.Typ.is_empty lt then
               loop @@ r1 :: l
             else
               List.cons r1 @@ loop @@ r2 :: l
@@ -185,7 +182,7 @@ let simplify (r : t_ext) : t_ext =
           let (all_eps, without_eps) = List.partition (
             fun (r : t_ext) : bool ->
               match r with 
-              | Letter lt -> Typ.is_empty lt 
+              | Letter lt -> Stt.Typ.is_empty lt 
               | _ -> false
           ) 
           unique_l
@@ -249,7 +246,7 @@ let simplify (r : t_ext) : t_ext =
                       max_left := List.map (
                         fun (left : t_ext option) : t_ext ->
                           match left with
-                          | None -> Letter Typ.empty
+                          | None -> Letter Stt.Typ.empty
                           | Some r -> r
                       )
                       all_left ;
@@ -304,7 +301,7 @@ let simplify (r : t_ext) : t_ext =
               res
           | _ -> (* at least one (singleton because we got rid of duplicates) *)
             match without_eps with
-            | [] -> Letter Typ.empty (* it was an union of espilon (why not) *)
+            | [] -> Letter Stt.Typ.empty (* it was an union of espilon (why not) *)
             | r :: [] -> simp @@ Option r
             | _ -> 
               let res, is_factorized = factorize @@ Union without_eps in
@@ -319,7 +316,7 @@ let simplify (r : t_ext) : t_ext =
       begin
         match simp r with
         | Letter l ->
-          if Typ.is_empty l then
+          if Stt.Typ.is_empty l then
             Letter l
           else
             Star (Letter l)
@@ -332,7 +329,7 @@ let simplify (r : t_ext) : t_ext =
       begin
         match simp r with
         | Letter l ->
-          if Typ.is_empty l then
+          if Stt.Typ.is_empty l then
             Letter l
           else
             Plus (Letter l)
@@ -345,7 +342,7 @@ let simplify (r : t_ext) : t_ext =
       begin
         match simp r with
         | Letter l ->
-          if Typ.is_empty l then
+          if Stt.Typ.is_empty l then
             Letter l
           else
             Option (Letter l)
