@@ -239,8 +239,6 @@ let decompile t =
       Need to rethink about the algo 
 
     *)
-    let open Automaton in
-    let auto = empty in
     let state =
       let s = ref ~-1 in
       fun () -> incr s; !s
@@ -249,18 +247,24 @@ let decompile t =
     let finals = ref [] in
     let states = ref [(t, init)] in
     let trans = ref [] in
-    let loop t q =
+
+    let loop (t : Typ.t) 
+                 (q : int) : unit =
       if Typ.subtype Builtins.nil t then
         finals:= q :: !finals ;
       states := (t, q) :: !states ;
       ()
     in
     let () = loop t init in
-    let auto = add_states auto @@ List.map snd !states in
+
+    let open Automaton in
+    let auto = add_states empty @@ List.map snd !states in
     let auto = add_start auto init in
     let auto = add_ends auto !finals in
     let auto = add_transitions auto !trans in
+
     Regexp.(simp_to_ext @@ to_regex_my auto)
+
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
       (module C : Base.Sigs.Bdd with type t = t and type atom = a and type Leaf.t = l)
