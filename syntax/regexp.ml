@@ -80,11 +80,12 @@ let rec flatten (r : t_ext) : t_ext =
   | Plus r -> Plus (flatten r)
   | Option r -> Option (flatten r)
 
-let pp (r : t_ext) : string =
+let pp (pp_lt : Format.formatter -> Stt.Typ.t -> unit)
+       (r : t_ext) : string =
   let rec loop (r : t_ext) : string =
     match r with
     | Letter t ->
-      Format.asprintf "%a" Pretty.pp t
+      Format.asprintf "%a" pp_lt t
     | Concat l ->
       String.concat ";" @@ List.map loop l
     | Union l ->

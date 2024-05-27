@@ -31,10 +31,6 @@ type t = {
             ends : states ;
          }
 
-
-
-type regexp = Regexp.t_simp
-
 (* ================================================================= *)
 (* ================================================================= *)
 (* ================================================================= *)
@@ -408,7 +404,7 @@ let check_word (automaton : t)
 
 
 
-let to_regex_my (automaton: t) : regexp =
+let to_regex_my (automaton: t) : Regexp.t_simp =
   (* States renaming *)
   let hash = Hashtbl.create 16 in
   let i = ref 1 in
@@ -439,15 +435,15 @@ let to_regex_my (automaton: t) : regexp =
   (* McNaughton-Yamada algorithm *)
   let n = StateSet.cardinal automaton.states in
   let mat1 = Array.init n (
-    fun (i : state) : regexp array ->
+    fun (i : state) : Regexp.t_simp array ->
       let line = Array.make n Regexp.empty in
       let () = Array.mapi_inplace (
         fun (j : state) 
-            (_ : regexp) : regexp ->
+            (_ : Regexp.t_simp) : Regexp.t_simp ->
           let transitions = get_transition_between automaton.trans (i+1) (j+1) in
           let regex = TransSet.fold (
             fun (_, l, _ : trans)
-                (acc : regexp) : regexp ->
+                (acc : Regexp.t_simp) : Regexp.t_simp ->
               Regexp.(
                 if is_empty acc then
                   letter l
@@ -479,8 +475,8 @@ let to_regex_my (automaton: t) : regexp =
     for k = 0 to n-1 do
       for p = 0 to n-1 do
         for q = 0 to n-1 do
-          let algo (mat : regexp array array)
-                   (mat' : regexp array array) : unit =
+          let algo (mat : Regexp.t_simp array array)
+                   (mat' : Regexp.t_simp array array) : unit =
             mat'.(p).(q) <-
               if Regexp.is_empty mat.(p).(k) || Regexp.is_empty mat.(k).(q) then
                 mat.(p).(q)
@@ -518,10 +514,10 @@ let to_regex_my (automaton: t) : regexp =
   in
   StateSet.fold (
     fun (start_state : state)
-        (acc : regexp) : regexp ->
+        (acc : Regexp.t_simp) : Regexp.t_simp ->
       StateSet.fold (
         fun (end_state : state)
-            (acc' : regexp) : regexp ->
+            (acc' : Regexp.t_simp) : Regexp.t_simp ->
           if Regexp.is_empty acc' then
             if start_state = end_state then
               Regexp.(

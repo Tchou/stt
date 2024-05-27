@@ -22,8 +22,9 @@ val simp_to_ext : t_simp -> t_ext
 (** [simp_to_ext r] extends the simple regex [r], in order to simplify 
   or print it *)
 
-val pp : t_ext -> string
-(** [pp r] cast the regex [r] into a string *)
+val pp : (Format.formatter -> Stt.Typ.t -> unit) -> t_ext -> string
+(** [pp pp_lt r] cast the regex [r] into a string, using [pp_lt] for 
+  the letters *)
 
 val simplify : t_ext -> t_ext
 (** [simplify r] normalizes and simplfies the regex [r] as much as possible *)
