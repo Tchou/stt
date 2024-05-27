@@ -1,7 +1,5 @@
 type t
 (** The automaton type *)
-type regexp
-(** The regexp type *)
 
 val empty : t
 (** The empty automaton *)
@@ -52,6 +50,6 @@ val check_word : t -> Stt.Typ.t list -> bool
 (** [check_word automaton word] checks if [word] is recognized by [automaton] *)
 
 
-val to_regex_my : t -> regexp
+val to_regex_my : t -> Regexp.t_simp
 (** [to_regex_my automaton] returns the regex representing [automaton] using the McNaughton-Yamada method. 
   The returned value might be unsimplified *)

@@ -13,7 +13,7 @@ type t_descr =
   | Cap of t list
   | Diff of t * t
   | Neg of t
-  | Regexp of regexp
+  | Regexp of Regexp.t_ext
   (*  | Apply of Name.t * t list *)
   | Rec of t * (Name.t * t) list
 and t = { typ : Typ.t ;
@@ -53,47 +53,6 @@ let str_descr v =
 
 let any = mk Typ.any (Printer (dprintf "Any"))
 let empty_ = mk Typ.empty (Printer (dprintf "Empty"))
-
-let rec pr ?(assoc=true) parent_level  ppf t =
-  let level = Prio.level t in
-  let do_parens = level < parent_level ||
-                  (level = parent_level && not assoc)
-  in
-  fprintf ppf "@[";
-  if do_parens then fprintf ppf "(";
-  let () =
-    match t.descr with
-      Printer f -> fprintf ppf "%t" f
-    | Pair (t1, t2) -> fprintf ppf "(%a,@ %a)" (pr level) t1 (pr level) t2
-    | Arrow (t1, t2) -> fprintf ppf "%a@ ->@ %a" (pr ~assoc:false level) t1 (pr level) t2
-    | Cup l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" |" level) l
-    | Cap l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" &" level) l
-    | Diff (t1, t2) -> fprintf ppf "%a@ \\@ %a" (pr level) t1 (pr ~assoc:false level) t2
-    | Neg t -> fprintf ppf "~%a" (pr level) t
-    | Regexp r -> fprintf ppf "%s" @@ Regexp.pp r
-    (*
-    | Apply (n, args) -> fprintf ppf "%s (@[%a@])" Name.(!!n) (pr_list_sep ~sep:"," Prio.lowest) args
-    *)
-    | Rec (t, defs) -> fprintf ppf "%a@ where@ @[%a@]" (pr level) t pr_defs defs
-  in
-  if do_parens then fprintf ppf ")";
-  fprintf ppf "@]"
-
-and pr_list_sep ~sep level ppf l =
-  match l with
-    [] -> assert false
-  | t :: [] -> pr level ppf t
-  | t :: tl -> fprintf ppf "%a%s@ " (pr level) t sep;
-    pr_list_sep ~sep level ppf tl
-
-and pr_def ppf (x, t) =
-  fprintf ppf "@[%s =@ %a@]" Name.(!!x) (pr Prio.lowest) t
-and pr_defs ppf l =
-  match l with
-    [] -> assert false
-  | d :: [] -> pr_def ppf d
-  | d :: ll -> fprintf ppf "%a@ and@ " pr_def d;
-    pr_defs ppf ll
 
 let is_empty_comp (module M : Typ.Basic) t =
   Typ.(is_empty (M.set (M.get t) empty))
@@ -290,7 +249,7 @@ let decompile t =
           (* tp :: acc (?) *)
           acc
         else
-          (* Somewhere : diff tp ts *)
+          (* Somewhere : diff tp ts :: acc (?) *)
           Regexp (pr_regexp ts) :: acc
     in
     let acc = pr_constr (module VarProduct : Basic with type Leaf.t = Product.t)
@@ -315,9 +274,28 @@ let decompile t =
       Need to rethink about the algo 
 
     *)
-
-    (* Place holder *)
-    Regexp.(simp_to_ext @@ concat (letter Stt.Typ.any) (letter t))
+    let open Automaton in
+    let auto = empty in
+    let state =
+      let s = ref ~-1 in
+      fun () -> incr s; !s
+    in
+    let init = state () in
+    let finals = ref [] in
+    let states = ref [(t, init)] in
+    let trans = ref [] in
+    let loop t q =
+      if Typ.subtype Builtins.nil t then
+        finals:= q :: !finals ;
+      states := (t, q) :: !states ;
+      ()
+    in
+    let () = loop t init in
+    let auto = add_states auto @@ List.map snd !states in
+    let auto = add_start auto init in
+    let auto = add_ends auto !finals in
+    let auto = add_transitions auto !trans in
+    Regexp.(simp_to_ext @@ to_regex_my auto)
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
       (module C : Base.Sigs.Bdd with type t = t and type atom = a and type Leaf.t = l)
@@ -379,11 +357,52 @@ let decompile t =
 
 let global_print_table = DescrTable.create 16
 
-let pp fmt t =
+let rec pp fmt t =
   let d = try DescrTable.find global_print_table t with
       Not_found ->
       let d = decompile t in
       DescrTable.add global_print_table t d;
       d
   in
-  pr Prio.lowest fmt d
+  pr Prio.lowest fmt d ;
+
+and pr ?(assoc=true) parent_level  ppf t =
+  let level = Prio.level t in
+  let do_parens = level < parent_level ||
+                  (level = parent_level && not assoc)
+  in
+  fprintf ppf "@[";
+  if do_parens then fprintf ppf "(";
+  let () =
+    match t with
+      Printer f -> fprintf ppf "%t" f
+    | Pair (t1, t2) -> fprintf ppf "(%a,@ %a)" (pr level) t1 (pr level) t2
+    | Arrow (t1, t2) -> fprintf ppf "%a@ ->@ %a" (pr ~assoc:false level) t1 (pr level) t2
+    | Cup l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" |" level) l
+    | Cap l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" &" level) l
+    | Diff (t1, t2) -> fprintf ppf "%a@ \\@ %a" (pr level) t1 (pr ~assoc:false level) t2
+    | Neg t -> fprintf ppf "~%a" (pr level) t
+    | Regexp r -> fprintf ppf "%s" @@ Regexp.pp pp r
+    (*
+    | Apply (n, args) -> fprintf ppf "%s (@[%a@])" Name.(!!n) (pr_list_sep ~sep:"," Prio.lowest) args
+    *)
+    | Rec (t, defs) -> fprintf ppf "%a@ where@ @[%a@]" (pr level) t pr_defs defs
+  in
+  if do_parens then fprintf ppf ")";
+  fprintf ppf "@]"
+
+and pr_list_sep ~sep level ppf l =
+  match l with
+    [] -> assert false
+  | t :: [] -> pr level ppf t
+  | t :: tl -> fprintf ppf "%a%s@ " (pr level) t sep;
+    pr_list_sep ~sep level ppf tl
+
+and pr_def ppf (x, t) =
+  fprintf ppf "@[%s =@ %a@]" Name.(!!x) (pr Prio.lowest) t
+and pr_defs ppf l =
+  match l with
+    [] -> assert false
+  | d :: [] -> pr_def ppf d
+  | d :: ll -> fprintf ppf "%a@ and@ " pr_def d;
+    pr_defs ppf ll

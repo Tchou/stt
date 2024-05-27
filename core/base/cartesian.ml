@@ -6,7 +6,7 @@ struct
 
   (*
     Eliminate negation by doing :
-    (S1xS2)∖(T1xT2) = (S1x(S2\T2)) U ((S\T1)xS2)
+    (S1xS2)∖(T1xT2) = (S1x(S2\T2)) U ((S1\T1)xS2)
     to remove a single product from S1xS2
     This yield two positive products (at most)
     (R U S)\ T = (R \ T) U (S \ T)
