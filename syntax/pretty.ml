@@ -352,13 +352,12 @@ let rec decompile fmt t =
       List.iter (fun (ri, q') -> loop ri q') todo
     in
     let () = loop t init in
-    let open Automaton in
+    (* let open Automaton in
     let auto = add_states empty @@ List.map snd !states in
     let auto = add_start auto init in
     let auto = add_ends auto !finals in
     let _auto = add_transitions auto !trans 
-    in
-    (* Some (Regexp (Regexp.(simplify @@ simp_to_ext @@ to_regex_my auto))) *)
+    in *)
     t, None
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
