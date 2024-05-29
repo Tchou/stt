@@ -19,7 +19,9 @@ let int = register "Int" @@ VarInt.set VarInt.any empty
 let char = register "Char" @@ VarChar.set VarChar.any empty
 let enum = register "Enum" @@ VarEnum.set VarEnum.any empty
 
-let arrow = register "Arrow" @@ arrow (node empty) (node any)
+let any_node = node any
+
+let arrow = register "Arrow" @@ arrow (node empty) any_node
 
 let z_interval i j =
   VarInt.set (VarInt.leaf (Int.range i j)) empty

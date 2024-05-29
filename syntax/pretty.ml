@@ -2,7 +2,7 @@ open Format
 open Stt
 module Name = Base.Hstring
 
-type t =
+type t_descr =
     Printer of (formatter -> unit)
   | Pair of t * t
   | Arrow of t * t
@@ -12,6 +12,10 @@ type t =
   | Neg of t
   (*  | Apply of Name.t * t list *)
   | Rec of t * (Name.t * t) list
+and t = { typ : Typ.t ;
+          descr  : t_descr }
+
+
 
 module Prio : sig
   type level = private int
@@ -21,7 +25,7 @@ end =
 struct
   type level = int
   let lowest = 0
-  let level = function
+  let level t = match t.descr with
       Printer _ | Pair _ (* | Apply _ *) -> 10
     | Neg _-> 9
     | Cap _ | Diff _ -> 8
@@ -30,10 +34,21 @@ struct
     | Rec _ -> 5
 end
 
-let var v = Printer (dprintf "%a" Var.pp v)
-let name v = Printer (dprintf "%s" Name.(!!v))
-let any = Printer (dprintf "Any")
-let empty_ = Printer (dprintf "Empty")
+let mk typ descr = { typ; descr }
+
+let var v =
+  let typ = Typ.var v in
+  mk typ (Printer (dprintf "%a" Var.pp v))
+
+let name_descr v =
+  Printer (dprintf "%s" Name.(!!v))
+
+let str_descr v =
+  Printer (dprintf "%s" v)
+
+
+let any = mk Typ.any (Printer (dprintf "Any"))
+let empty_ = mk Typ.empty (Printer (dprintf "Empty"))
 
 let rec pr ?(assoc=true) parent_level  ppf t =
   let level = Prio.level t in
@@ -43,7 +58,7 @@ let rec pr ?(assoc=true) parent_level  ppf t =
   fprintf ppf "@[";
   if do_parens then fprintf ppf "(";
   let () =
-    match t with
+    match t.descr with
       Printer f -> fprintf ppf "%t" f
     | Pair (t1, t2) -> fprintf ppf "(%a,@ %a)" (pr level) t1 (pr level) t2
     | Arrow (t1, t2) -> fprintf ppf "%a@ ->@ %a" (pr ~assoc:false level) t1 (pr level) t2
@@ -151,18 +166,31 @@ let split_variables t =
   reduce_variables table
 
 let is_any t = Typ.(subtype any t)
+
 let pcap l = match l with
     [] -> assert false
   | [ t ] -> t
-  | _ -> Cap l
+  | _ ->
+    let typ = List.fold_left (fun acc t -> Typ.cap t.typ acc) Typ.any l in
+    mk typ (Cap l)
 
 let pcup l = match l with
   | [] -> empty_
   | [ t ] -> t
-  | _ -> Cup l
+  | _ ->
+    let typ = List.fold_left (fun acc t -> Typ.cup t.typ acc) Typ.empty l in
+    mk typ (Cup l)
 
-let any_prod = Pair (any, any)
-let any_arrow = name (Name.cons "Arrow")
+
+let any_node = Typ.(node any)
+let any_prod = mk Typ.(product any_node any_node) (Pair (any, any))
+let any_arrow = mk Builtins.arrow (str_descr "Arrow")
+
+let neg t =
+  mk (Typ.neg t.typ) (Neg t)
+
+let prod t1 t2 =
+  mk Typ.(product (node t1.typ) (node t2.typ)) (Pair (t1, t2))
 
 let get_leaf (type t) (module M : Typ.Basic with type Leaf.t = t) t =
   match (M.get t |> M.dnf) () with
@@ -172,7 +200,7 @@ let get_leaf (type t) (module M : Typ.Basic with type Leaf.t = t) t =
 
 let pbasic (module M : Typ.Basic) t acc =
   let l = get_leaf (module M) t in
-  if M.Leaf.is_empty l then acc else (Printer (fun ppf -> M.Leaf.pp ppf l))::acc
+  if M.Leaf.is_empty l then acc else (mk t (Printer (fun ppf -> M.Leaf.pp ppf l)))::acc
 
 let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
 let decompile t =
@@ -186,11 +214,14 @@ let decompile t =
     else rec_names.(i)
   in
   let rec pr_descr t =
+    let descr = pr_descr_ t in
+    mk t descr
+  and pr_descr_ t =
     match DescrTable.find memo t with
     | Some (_, _, pname) -> pname
     | None ->
       let n = get_name () in
-      let pname = name n in
+      let pname = name_descr n in
       DescrTable.replace memo t (Some (n, empty_, pname));
       pname
     | exception Not_found ->
@@ -209,16 +240,16 @@ let decompile t =
           VarTable.fold (fun (vpos, vneg) t acc ->
               if Typ.is_empty t then acc else
                 let tacc = Var.Set.fold (fun v acc -> (var v) :: acc) vpos [] in
-                let tacc = Var.Set.fold (fun v acc -> (Neg (var v)) :: acc) vneg tacc in
+                let tacc = Var.Set.fold (fun v acc -> (neg (var v)) :: acc) vneg tacc in
                 let tacc = if is_any t then tacc else (pr_choose_compl t) :: tacc in
                 (pcap (List.rev tacc)) :: acc)
             var_table acc
       in
       let res = pcup acc in
       match DescrTable.find memo t with
-        None -> DescrTable.remove memo t; res
+        None -> DescrTable.remove memo t; res.descr
       | Some (n, _, pname) ->
-        DescrTable.replace memo t (Some (n, res, pname)); res
+        DescrTable.replace memo t (Some (n, res, pname)); res.descr
   and pr_node n = pr_descr (Typ.descr n)
   and pr_choose_compl t =
     let do_complement = choose_complement t in
@@ -228,7 +259,8 @@ let decompile t =
       [], false -> empty_
     | [], true -> any
     | l, false -> pcup l
-    | l, true -> Diff (any, pcup l)
+    | l, true -> let cl = pcup l in
+      mk Typ.(diff any cl.typ) (Diff (any, cl))
   and pr_no_var t =
     let open Typ in
     let acc = [] in
@@ -256,8 +288,8 @@ let decompile t =
     if is_empty_comp (module V) t then acc
     else if is_any_comp (module V) t then any :: acc
     else
-      (*let () = Format.eprintf "Going to ARROW LINE CAUSE: %a is not empty\n%!" 
-      Typ.pp (V.set (V.get t) Typ.empty) in*)
+      (*let () = Format.eprintf "Going to ARROW LINE CAUSE: %a is not empty\n%!"
+        Typ.pp (V.set (V.get t) Typ.empty) in*)
       let dnf = get_leaf (module V) t in
       C.dnf dnf
       |> Seq.fold_left pr_line acc
@@ -265,28 +297,35 @@ let decompile t =
     let posp =
       let open Typ in
       match posp with
-        [] -> None
-      | [ (n1, n2)] -> Some (Pair(pr_node n1, pr_node n2))
+        [] -> any_prod
+      | [ (n1, n2)] ->
+        prod (pr_node n1) (pr_node n2)
       | ( n1, n2) :: ll ->
         let n1, n2 = List.fold_left (fun (t1, t2) (n1, n2) ->
             (cap t1 (descr n1), cap t2 (descr n2))) (descr n1, descr n2) ll
-        in  Some ( Pair (pr_descr n1, pr_descr n2))
+        in  prod (pr_descr n1) (pr_descr n2)
     in
-    let negp = List.map (fun (n1, n2) -> Pair (pr_node n1, pr_node n2)) negp in
-    let posp = match posp with None ->Pair (any, any) | Some l -> l in
+    let negp = List.map (fun (n1, n2) -> prod (pr_node n1) (pr_node n2)) negp in
     let res = match negp with
         [] -> posp
-      | l -> Diff(posp, pcup l)
+      | l ->
+        let cl = pcup l in
+        mk Typ.(diff posp.typ cl.typ) (Diff(posp, cl))
     in res :: acc
   and pr_arrow_line acc ((posa, nega),_) =
     (*Format.eprintf "IN ARROW LINE\n%!"; *)
-    let arrow (n1, n2) = Arrow (pr_node n1, pr_node n2) in
+    let arrow (n1, n2) =
+      let t = Typ.arrow n1 n2 in
+      mk t (Arrow (pr_node n1, pr_node n2))
+    in
     let posa = List.map arrow posa in
     let nega = List.map arrow nega in
     let posa = match posa with [] -> any_arrow | l -> pcap l in
     let res = match nega with
         [] -> posa
-      | l -> Diff(posa, pcup l)
+      | l ->
+        let cl = pcup l in
+        mk Typ.(diff posa.typ cl.typ) (Diff(posa, cl))
     in
     res :: acc
   in
@@ -299,7 +338,7 @@ let decompile t =
   in
   match recs with
     [] -> res
-  | _ -> Rec(res, recs)
+  | _ -> mk t (Rec(res, recs))
 
 let global_print_table = DescrTable.create 16
 

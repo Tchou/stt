@@ -110,7 +110,7 @@ let main () =
     ]
   in
   List.fold_left (fun (i, env) s ->
-      let path = Format.sprintf "test/auto%03d.txt" i in
+      let path = Format.sprintf "auto%03d.txt" i in
       let env' = dump_auto env path s in
       (i+1, env')
     ) (0, Syntax.Typing.default) l
