@@ -151,12 +151,21 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
     [] l
 
   let simplify (r : t_ext) : t_ext =
-    let rec simp (r : t_ext) : t_ext =
+    let rec compare (r1 : t_ext)
+                    (r2 : t_ext) : bool =
+      match r1, r2 with
+      | Letter lt1, Letter lt2 -> 0 = Lt.compare lt1 lt2
+      | Concat l1, Concat l2
+      | Union l1, Union l2 -> List.equal compare l1 l2
+      | Star r1, Star r2
+      | Plus r1, Plus r2
+      | Option r1, Option r2 -> compare r1 r2
+      | _, _ -> false
+    and simp (r : t_ext) : t_ext =
       match r with
       | Letter _ -> r
       | Concat l ->
         let l = List.map simp l in
-        (* TODO : because of flattening, Bool;Int(Bool;Int)* isn't factored (we only check neighbours) *)
         let rec loop (l : t_ext list) : t_ext list =
           match l with
           | []
@@ -164,13 +173,19 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
           | r1 :: r2 :: l ->
             match r1, r2 with
             | Star rr1, Star rr2 ->
-              if rr1 = rr2 then
+              if compare rr1 rr2 then
                 loop @@ (Star rr1) :: l
+              else
+                List.cons r1 @@ loop @@ r2 :: l
+            | Star rr1, Option rr2
+            | Option rr1, Star rr2 ->
+              if compare rr1 rr2 then
+                loop @@ (simp @@ Star rr1) :: l
               else
                 List.cons r1 @@ loop @@ r2 :: l
             | Star rr1, rr2
             | rr1, Star rr2 ->
-              if rr1 = rr2 then
+              if compare rr1 rr2 then
                 loop @@ (simp @@ Plus rr1) :: l
               else
                 List.cons r1 @@ loop @@ r2 :: l
@@ -196,7 +211,7 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
         in
         ( 
           match loop l with
-          | [] -> failwith "Empty concat is impossible"
+          | [] -> Letter Lt.epsilon
           | r :: [] -> r
           | l -> Concat l 
         )
@@ -205,7 +220,7 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
         in
         (
           match unique_l with
-          | [] -> failwith "Empty union is impossible"
+          | [] -> assert false
           | r :: [] -> r
           | _ -> (
             let (all_eps, without_eps) = List.partition (
