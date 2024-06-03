@@ -184,14 +184,16 @@ let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
 let global_print_table = DescrTable.create 16
 
 let rec decompile fmt t =
-  let module Automaton = Automaton.Make(
-    struct
+  let module Lt = struct
 
       type nonrec t = t
 
-      let compare (_t1 : t)
-                  (_t2 : t) : int =
-        0
+      let compare (t1 : t)
+                  (t2 : t) : int =
+        if Typ.equiv t1.typ t2.typ then
+          0
+        else
+          1
 
       let pp (fmt : Format.formatter)
              (t : t) : unit = pp fmt t.typ
@@ -200,12 +202,13 @@ let rec decompile fmt t =
         typ = Typ.empty ; 
         descr = Printer (fun (_ : formatter) -> ()) 
       } 
-      let is_epsilon = (=) epsilon 
+      let is_epsilon (t : t) = Typ.is_empty t.typ
 
     end
-  )
   in
-  let module Regexp = Automaton.R in
+  let module Automaton = Automaton.Make(Lt) in
+  let module Regexp = Automaton.R
+  in
   let memo = DescrTable.create 16 in
   let name_id = ref 0 in
   let get_name () =
@@ -386,7 +389,10 @@ let rec decompile fmt t =
     let auto = add_states empty @@ List.map snd !states in
     let auto = add_start auto init in
     let auto = add_ends auto !finals in
-    let _auto = add_transitions auto !trans 
+    let auto = add_transitions auto !trans in
+    let _regexp = Regexp.simplify 
+      @@ Regexp.simp_to_ext 
+      @@ to_regex_my auto
     in
     t, None
   and pr_constr (type t a l)
