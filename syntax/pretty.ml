@@ -20,14 +20,14 @@ and t = {
 
 module Prio : sig
   type level = private int
-  val level : t -> level
+  val level : t_descr -> level
   val lowest : level
 end =
 struct
   type level = int
   let lowest = 0
   let level t = 
-    match t.descr with
+    match t with
     | Printer _ | Pair _  (* | Regexp _ *) (* | Apply _ *) -> 10
     | Neg _-> 9
     | Cap _ | Diff _ -> 8
@@ -180,7 +180,32 @@ let pbasic (module M : Typ.Basic) t acc =
     (mk t @@ Printer (fun ppf -> M.Leaf.pp ppf l)) :: acc
 
 let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
+
+let global_print_table = DescrTable.create 16
+
 let rec decompile fmt t =
+  let module Automaton = Automaton.Make(
+    struct
+
+      type nonrec t = t
+
+      let compare (_t1 : t)
+                  (_t2 : t) : int =
+        0
+
+      let pp (fmt : Format.formatter)
+             (t : t) : unit = pp fmt t.typ
+
+      let epsilon = { 
+        typ = Typ.empty ; 
+        descr = Printer (fun (_ : formatter) -> ()) 
+      } 
+      let is_epsilon = (=) epsilon 
+
+    end
+  )
+  in
+  let module Regexp = Automaton.R in
   let memo = DescrTable.create 16 in
   let name_id = ref 0 in
   let get_name () =
@@ -293,8 +318,7 @@ let rec decompile fmt t =
     let init = state () in
     let finals = ref [] in
     let states = ref [(t, init)] in
-    let trans = ref [] in 
-    let memo = Hashtbl.create 16
+    let trans = ref []
     in
     let rec loop (t : Typ.t) 
                  (q : int) : unit =
@@ -342,9 +366,15 @@ let rec decompile fmt t =
               | Some (_, q') -> q', acc
             )
             in
-            let ast_li = pp fmt li in
-            let () = Hashtbl.replace memo li ast_li in
-            let () = trans := (q, li, q') :: !trans in
+            let ast = 
+              try 
+                DescrTable.find global_print_table li 
+              with Not_found ->
+                let d = decompile fmt li in
+                DescrTable.add global_print_table li d ;
+                d
+            in
+            let () = trans := (q, mk li ast, q') :: !trans in
             acc
         )
         []
@@ -352,12 +382,12 @@ let rec decompile fmt t =
       List.iter (fun (ri, q') -> loop ri q') todo
     in
     let () = loop t init in
-    (* let open Automaton in
+    let open Automaton in
     let auto = add_states empty @@ List.map snd !states in
     let auto = add_start auto init in
     let auto = add_ends auto !finals in
     let _auto = add_transitions auto !trans 
-    in *)
+    in
     t, None
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
@@ -413,10 +443,8 @@ let rec decompile fmt t =
     ) memo []
   in
   match recs with
-    [] -> res
-  | _ -> mk t @@ Rec(res, recs)
-
-and global_print_table = DescrTable.create 16
+    [] -> res.descr
+  | _ -> Rec(res, recs)
 
 and pp fmt t =
   let d = try DescrTable.find global_print_table t with
@@ -435,19 +463,19 @@ and pr ?(assoc=true) parent_level ppf t =
   fprintf ppf "@[";
   if do_parens then fprintf ppf "(";
   let () =
-    match t.descr with
+    match t with
       Printer f -> fprintf ppf "%t" f
-    | Pair (t1, t2) -> fprintf ppf "(%a,@ %a)" (pr level) t1 (pr level) t2
-    | Arrow (t1, t2) -> fprintf ppf "%a@ ->@ %a" (pr ~assoc:false level) t1 (pr level) t2
+    | Pair (t1, t2) -> fprintf ppf "(%a,@ %a)" (pr level) t1.descr (pr level) t2.descr
+    | Arrow (t1, t2) -> fprintf ppf "%a@ ->@ %a" (pr ~assoc:false level) t1.descr (pr level) t2.descr
     | Cup l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" |" level) l
     | Cap l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" &" level) l
-    | Diff (t1, t2) -> fprintf ppf "%a@ \\@ %a" (pr level) t1 (pr ~assoc:false level) t2
-    | Neg t -> fprintf ppf "~%a" (pr level) t
+    | Diff (t1, t2) -> fprintf ppf "%a@ \\@ %a" (pr level) t1.descr (pr ~assoc:false level) t2.descr
+    | Neg t -> fprintf ppf "~%a" (pr level) t.descr
     (* | Regexp r -> fprintf ppf "[%s]" @@ Regexp.pp pp r *)
     (*
     | Apply (n, args) -> fprintf ppf "%s (@[%a@])" Name.(!!n) (pr_list_sep ~sep:"," Prio.lowest) args
     *)
-    | Rec (t, defs) -> fprintf ppf "%a@ where@ @[%a@]" (pr level) t pr_defs defs
+    | Rec (t, defs) -> fprintf ppf "%a@ where@ @[%a@]" (pr level) t.descr pr_defs defs
   in
   if do_parens then fprintf ppf ")";
   fprintf ppf "@]"
@@ -455,12 +483,12 @@ and pr ?(assoc=true) parent_level ppf t =
 and pr_list_sep ~sep level ppf l =
   match l with
     [] -> assert false
-  | t :: [] -> pr level ppf t
-  | t :: tl -> fprintf ppf "%a%s@ " (pr level) t sep;
+  | t :: [] -> pr level ppf t.descr
+  | t :: tl -> fprintf ppf "%a%s@ " (pr level) t.descr sep;
     pr_list_sep ~sep level ppf tl
 
 and pr_def ppf (x, t) =
-  fprintf ppf "@[%s =@ %a@]" Name.(!!x) (pr Prio.lowest) t
+  fprintf ppf "@[%s =@ %a@]" Name.(!!x) (pr Prio.lowest) t.descr
 and pr_defs ppf l =
   match l with
     [] -> assert false
