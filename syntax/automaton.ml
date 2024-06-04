@@ -88,7 +88,10 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
 
   let add_state (automaton : t) 
                 (state : state) : t =
-    { automaton with states = StateSet.add state automaton.states }
+    { 
+      automaton with 
+        states = StateSet.add state automaton.states 
+    }
 
   let add_states (automaton : t) 
                  (states : state list) : t =
@@ -104,8 +107,10 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
                 (letter : lt)
                 (state2 : state) : t =
     if StateSet.mem state1 automaton.states && StateSet.mem state2 automaton.states then
-      { automaton with 
-          trans = TransSet.add (state1, letter, state2) automaton.trans }
+      { 
+        automaton with 
+          trans = TransSet.add (state1, letter, state2) automaton.trans 
+      }
     else
       failwith "both given states must be automaton's states"
 
@@ -121,8 +126,10 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
   let add_start (automaton : t) 
                 (state : state) : t =
     match StateSet.find_opt state automaton.states with
-    | Some _ ->
-      { automaton with starts = StateSet.add state automaton.starts }
+    | Some _ -> { 
+        automaton with 
+          starts = StateSet.add state automaton.starts 
+      }
     | None -> failwith "given state must be an automaton's state"
 
   let add_starts (automaton : t) 
@@ -137,8 +144,10 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
   let add_end (automaton : t) 
               (state : state) : t =
     match StateSet.find_opt state automaton.states with
-    | Some _ ->
-      { automaton with ends = StateSet.add state automaton.ends }
+    | Some _ -> { 
+        automaton with 
+          ends = StateSet.add state automaton.ends 
+      }
     | None -> failwith "given state must be an automaton's state"
 
   let add_ends (automaton : t) 
