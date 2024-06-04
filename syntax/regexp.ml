@@ -139,11 +139,12 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
     loop @@ flatten r
 
 
-  let get_rid_of_duplicate (l : 'a list) : 'a list =
+  let get_rid_of_duplicate (comp : 'a -> 'a -> bool)
+                           (l : 'a list) : 'a list =
     List.rev @@ List.fold_left (
       fun (acc : 'a list)
           (elt : 'a) : 'a list ->
-        if List.mem elt acc then
+        if List.exists (comp elt) acc then
           acc
         else
           elt :: acc
@@ -216,7 +217,7 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
           | l -> Concat l 
         )
       | Union l ->
-        let unique_l = get_rid_of_duplicate @@ List.map simp l
+        let unique_l = get_rid_of_duplicate compare @@ List.map simp l
         in
         (
           match unique_l with
@@ -283,7 +284,14 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
                       let all_factors, all_left = List.split
                         @@ List.map calc !max_left
                       in
-                      match get_rid_of_duplicate all_factors with
+                      let compare_opt (o1 : t_ext option)
+                                      (o2 : t_ext option) : bool =
+                        match o1, o2 with
+                        | None, None -> true
+                        | Some r1, Some r2 -> compare r1 r2
+                        | _ -> false
+                      in
+                      match get_rid_of_duplicate compare_opt all_factors with
                       | [] -> assert false (* No factor : issue *)
                       | Some factor :: [] -> (
                         has_been_factorized := true ;
