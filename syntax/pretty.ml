@@ -2,6 +2,16 @@ open Format
 open Stt
 module Name = Base.Hstring
 
+(* 
+  
+  let f : Base.Basic_printer.t -> t_descr
+    => presque l'identité
+
+  Mais faut reconstruire un type Typ.t avec.....
+  Compliqué
+  
+*)
+
 type t_descr =
     Printer of (formatter -> unit)
   | Pair of t * t
@@ -16,6 +26,18 @@ type t_descr =
 and t = { typ : Typ.t ;
           descr  : t_descr }
 
+(* externaliser pour Base.Basic_printer.t
+  
+  type level
+  val lowest : level
+
+  priorité pour Item (objet sans ou etc)..
+                Neg, 
+                Cap, Diff, 
+                Cup
+
+  succ, pred
+*)
 module Prio : sig
   type level = private int
   val level : t_descr -> level
@@ -216,6 +238,12 @@ let pbasic (module M : Typ.Basic) t acc =
   if M.Leaf.is_empty l then 
     acc 
   else 
+    (* 
+      Ajouter export dans les types basics
+      Traduire avec t_descr avec [f] (plus haut) pour obtenir un
+        [t_descr] correct
+        
+    *)
     (mk t @@ Printer (fun ppf -> M.Leaf.pp ppf l)) :: acc
 
 let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
@@ -337,16 +365,6 @@ let decompile t =
     in
     acc
   and pr_regexp (t : Typ.t) : Typ.t * t option =
-    (* 
-      Expl : ts = (Int, `nil /\ 'a) | (Bool, `nil)
-
-      Empty < ts <= Any*
-
-      On veut avoir à la fin 
-        - ts' = (Int, `nil /\ 'a), le reste si jamais
-        - re = Bool, la regexp
-
-    *)
     let state =
       let s = ref ~-1 in
       fun (_ : unit) : int -> 
@@ -355,34 +373,20 @@ let decompile t =
     let init = state () in
     let finals = ref [] in
     let states = ref [(t, init)] in
-    let trans = ref []
-    in
+    let trans = ref [] in
     let rec loop (t : Typ.t) 
                  (q : int) : unit =
       if Typ.subtype Builtins.nil t then
         finals := q :: !finals ;
       states := (t, q) :: !states ;
-      (* 
-        Pour chaque (li, ri),
-          * créer un état q' pour ri (ou déjà généré)
-          ( 
-            * est-ce que ri a des variables? si oui, on arrête et q' final?
-                -> Typ.top_levelsvar renvoient deux ensembles vides
-          )
-
-          * ast_li = pp li en stockant le lien entre li et ast_li
-                  (je m'en sers où d'ast_li après?)
-
-          * créer transition (q, li, q')
-
-          * récurser [loop ri q'] si q' tout frais
-      *)
-      let prod = Typ.VarProduct.(full_dnf (get t))
-               |> Seq.map snd
-               |> Seq.map (fun (pl, nl) ->
-                   (List.map extract pl,
-                    List.map extract nl)
-                 )
+      let prod = 
+        match List.of_seq @@ Typ.VarProduct.(full_dnf (get t)) with
+        | [ (([], []), (pl, nl)) ] -> 
+          List.to_seq [(
+            List.map extract pl,
+            List.map extract nl
+          )]
+        | _ -> raise Exit (* toplevel variable *)
       in
       let norm = Normal.normal prod in
       let todo = 
@@ -410,21 +414,25 @@ let decompile t =
       in
       List.iter (fun (ri, q') -> loop ri q') todo
     in
-    let () = loop t init in
-    let open Automaton in
-    let auto = add_states empty @@ List.map snd !states in
-    let auto = add_start auto init in
-    let auto = add_ends auto !finals in
-    let auto = add_transitions auto !trans in
-    let regexp = Regexp.simplify 
-      @@ Regexp.simp_to_ext 
-      @@ to_regex_my auto
-    in
-    let printer fmt = 
-      let s = Regexp.pp (fun fmt lt -> pr Prio.lowest fmt lt.descr) regexp in
-      Format.fprintf fmt "[%s]" s
-    in
-    Typ.empty, Some (mk t @@ Printer printer)
+    try
+      let () = loop t init in
+      let open Automaton in
+      let auto = add_states empty @@ List.map snd !states in
+      let auto = add_start auto init in
+      let auto = add_ends auto !finals in
+      let auto = add_transitions auto !trans in
+      let regexp = Regexp.(simplify
+        @@ simp_to_ext
+        @@ to_regex_my auto
+      )
+      in
+      let printer fmt = 
+        let s = Regexp.pp (fun fmt lt -> pr Prio.lowest fmt lt.descr) regexp in
+        Format.fprintf fmt "@[[%s]@]" s
+      in
+      Typ.empty, Some (mk t @@ Printer printer)
+    with Exit ->
+      t, None
   and pr_constr (type t a l)
       (module V : Typ.Basic with type Leaf.t = t)
       (module C : Base.Sigs.Bdd with type t = t and type atom = a and type Leaf.t = l)

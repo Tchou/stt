@@ -112,29 +112,14 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
     let rec loop (r : t_ext) : string =
       match r with
       | Letter l ->
-        Format.asprintf "%a" pp_lt l
+        Format.asprintf "(%a)" pp_lt l
       | Concat l ->
-        String.concat ";" @@ List.map loop l
+        "(" ^ String.concat ";" (List.map loop l) ^ ")"
       | Union l ->
         "(" ^ (String.concat "|" @@ List.map loop l) ^ ")"
-      | Star r -> (
-          match r with
-          | Letter _
-          | Union _ -> loop r ^ "*"
-          | _ -> "(" ^ loop r ^ ")*"
-        )
-      | Plus r -> (
-          match r with
-          | Letter _
-          | Union _ -> loop r ^ "+"
-          | _ -> "(" ^ loop r ^ ")+"
-        )
-      | Option r -> (
-          match r with
-          | Letter _
-          | Union _ -> loop r ^ "?"
-          | _ -> "(" ^ loop r ^ ")?"
-        )
+      | Star r -> "(" ^ loop r ^ ")*"
+      | Plus r -> "(" ^ loop r ^ ")+"
+      | Option r -> "(" ^ loop r ^ ")?"
     in
     loop @@ flatten r
 

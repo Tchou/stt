@@ -8,6 +8,7 @@ let bool = S.of_list [
     (Hstring.cons "true");
     (Hstring.cons "false")
   ]
+(* pp => pp_prio (parent_prio:...) fmt (s:t) *)
 let pp fmt (s:t) =
   let open Format in
   let c, s = match s with `Finite s -> false, s | `Cofinite s -> true, s in
@@ -25,6 +26,10 @@ let pp fmt (s:t) =
       if c && ll <> [] then fprintf fmt ")"
   end;
   fprintf fmt "@]"
+(* 
+    pp = pp_prio Prio.highest)
+*)
+
 
 let sample = function
   | `Finite s -> S.min_elt_opt s
