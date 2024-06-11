@@ -5,6 +5,7 @@ let equal x y = x == y
 let hash = function false -> 0 | true -> 1
 let name = "Unit"
 let pp fmt x = Format.pp_print_string fmt (if x then name else "Empty")
+let export _ = assert false
 let singleton () = true
 let cup x y = x || y
 let cap x y = x && y

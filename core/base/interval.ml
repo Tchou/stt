@@ -96,4 +96,7 @@ module Make (X : V) = struct
     match i with
     | [] -> false
     | (a, b) :: ii -> if x < a then false else if x > b then mem x ii else true
+
+  let export _ = assert false
+
 end
