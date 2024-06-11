@@ -97,6 +97,21 @@ module Make (X : V) = struct
     | [] -> false
     | (a, b) :: ii -> if x < a then false else if x > b then mem x ii else true
 
-  let export _ = assert false
+  let export t =
+    (false, Stdlib.List.fold_right (
+        fun ((a, b) : X.t * X.t)
+            (acc : (t * Pr_basic.single) list) : (t * Pr_basic.single) list ->
+          let f =
+            fun (fmt : Format.formatter) : unit ->
+              Format.fprintf fmt "%a" X.pp a
+          in
+          let f' =
+            fun (fmt : Format.formatter) : unit ->
+              Format.fprintf fmt "%a" X.pp b
+          in
+          (range a b, Pr_basic.Range (f, f')) :: acc
+      ) 
+      t []
+    )
 
 end
