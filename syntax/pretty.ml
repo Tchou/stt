@@ -2,16 +2,6 @@ open Format
 open Stt
 module Name = Base.Hstring
 
-(* 
-  
-  let f : Base.Basic_printer.t -> t_descr
-    => presque l'identité
-
-  Mais faut reconstruire un type Typ.t avec.....
-  Compliqué
-  
-*)
-
 type t_descr =
     Printer of (formatter -> unit)
   | Pair of t * t
@@ -26,18 +16,6 @@ type t_descr =
 and t = { typ : Typ.t ;
           descr  : t_descr }
 
-(* externaliser pour Base.Basic_printer.t
-  
-  type level
-  val lowest : level
-
-  priorité pour Item (objet sans ou etc)
-                Neg, 
-                Cap, Diff, 
-                Cup
-
-  succ, pred
-*)
 module Prio : sig
   type level = private int
   val level : t_descr -> level
@@ -233,17 +211,13 @@ let get_leaf (type t) (module M : Typ.Basic with type Leaf.t = t) t =
   | Seq.Cons((([], []), l), _ ) -> l
   | _ -> assert false
 
-let pbasic (module M : Typ.Basic) t acc =
+let pr_basic (module M : Typ.Basic) t acc =
   let l = get_leaf (module M) t in
   if M.Leaf.is_empty l then 
     acc 
-  else 
-    (* 
-      Ajouter export dans les types basics
-      Traduire avec t_descr avec [f] (plus haut) pour obtenir un
-        [t_descr] correct
-        
-    *)
+  else if M.Leaf.is_any l then 
+    M.(mk (set (get t) Typ.empty) @@ str_descr Leaf.name) :: acc
+  else
     (mk t @@ Printer (fun ppf -> M.Leaf.pp ppf l)) :: acc
 
 let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
@@ -347,10 +321,10 @@ let decompile t =
           in
           cup (diff t ts) ts', acc
     in
-    let acc = pbasic (module VarEnum) t acc in
-    let acc = pbasic (module VarInt) t acc in
-    let acc = pbasic (module VarChar) t acc in
-    let acc = pbasic (module VarUnit) t acc in
+    let acc = pr_basic (module VarEnum) t acc in
+    let acc = pr_basic (module VarInt) t acc in
+    let acc = pr_basic (module VarChar) t acc in
+    let acc = pr_basic (module VarUnit) t acc in
     let acc = pr_constr (module VarProduct : Basic with type Leaf.t = Product.t)
         (module Product : Base.Sigs.Bdd with type t = Product.t
                                          and type atom = Product.atom

@@ -42,6 +42,7 @@ module Node : Base.Common.T
 
 module type Basic = sig
   include Base.Sigs.Bdd with type atom = Var.t
+  include Base.Sigs.Printable with type t := t
   val get : descr -> t
   val set : t -> descr -> descr
 end
@@ -49,6 +50,7 @@ module type Constr = sig
   include Base.Sigs.Bdd2 with type atom = Var.t
   val get : descr -> t
   val set : t -> descr -> descr
+  val export : t -> t Base.Pr_basic.t
 end
 
 val num_components : int

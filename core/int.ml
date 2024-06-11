@@ -58,6 +58,8 @@ let pp fmt l =
   else if I.is_empty l then pp_print_string fmt "Empty"
   else pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "|") pp_pair fmt l
 
+let export _ = assert false
+
 let empty = I.empty
 let is_empty = I.is_empty
 let any = I.any

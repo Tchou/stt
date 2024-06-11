@@ -76,4 +76,6 @@ end = struct
 
   let pp _ _ = assert false
   let sample _ = assert false
+
+  let export _ = assert false 
 end
