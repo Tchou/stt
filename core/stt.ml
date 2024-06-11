@@ -8,3 +8,4 @@ module Typ = Typ
 module Unit = Unit
 module Var = Var
 module Builtins = Builtins
+module Subst = Subst

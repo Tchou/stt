@@ -74,35 +74,35 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
 
 
 
-  let rec flatten (r : t_ext) : t_ext =
+  let rec flatten_aux (f : t_ext -> t_ext list option)
+                      (l : t_ext list) : t_ext list =
+    let flatten_aux' = flatten_aux f in           
+    match l with
+    | [] -> []
+    | r :: l -> (
+      match f r with
+      | Some ll -> List.append ll @@ flatten_aux' l
+      | None -> r :: flatten_aux' l
+    )
+  and flatten (r : t_ext) : t_ext =
     match r with
     | Letter _ -> r
     | Concat l ->
-      let rec loop (l : t_ext list) : t_ext list =
-        match l with
-        | [] -> []
-        | r :: l ->
-          begin
-            match r with
-            | Concat ll ->
-              List.append ll @@ loop l
-            | _ -> r :: loop l
-          end
+      let f = 
+        fun (r : t_ext) : t_ext list option ->
+          match r with
+          | Concat l -> Some l
+          | _ -> None
       in
-      Concat (loop @@ List.map flatten l)
+      Concat (flatten_aux f @@ List.map flatten l)
     | Union l ->
-      let rec loop (l : t_ext list) : t_ext list =
-        match l with
-        | [] -> []
-        | r :: l ->
-          begin
-            match r with
-            | Union ll ->
-              List.append ll @@ loop l
-            | _ -> r :: loop l
-          end
+      let f = 
+        fun (r : t_ext) : t_ext list option ->
+          match r with
+          | Union l -> Some l
+          | _ -> None
       in
-      Union (loop @@ List.map flatten l)
+      Union (flatten_aux f @@ List.map flatten l)
     | Star r -> Star (flatten r)
     | Plus r -> Plus (flatten r)
     | Option r -> Option (flatten r)
