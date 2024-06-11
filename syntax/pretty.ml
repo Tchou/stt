@@ -10,7 +10,6 @@ type t_descr =
   | Cap of t list
   | Diff of t * t
   | Neg of t
-  (* | Regexp of Regexp.t_ext *)
   (*  | Apply of Name.t * t list *)
   | Rec of t * (Name.t * t) list
 and t = { typ : Typ.t ;
@@ -26,7 +25,7 @@ struct
   let lowest = 0
   let level t = 
     match t with
-    | Printer _ | Pair _  (* | Regexp _ *) (* | Apply _ *) -> 10
+    | Printer _ | Pair _  (* | Apply _ *) -> 10
     | Neg _-> 9
     | Cap _ | Diff _ -> 8
     | Cup _ -> 7
@@ -50,7 +49,6 @@ let rec pr ?(assoc=true) parent_level ppf t =
     | Cap l -> fprintf ppf "@[%a@]" (pr_list_sep ~sep:" &" level) l
     | Diff (t1, t2) -> fprintf ppf "%a@ \\@ %a" (pr level) t1.descr (pr ~assoc:false level) t2.descr
     | Neg t -> fprintf ppf "~%a" (pr level) t.descr
-    (* | Regexp r -> fprintf ppf "[%s]" @@ Regexp.pp pp r *)
     (*
     | Apply (n, args) -> fprintf ppf "%s (@[%a@])" Name.(!!n) (pr_list_sep ~sep:"," Prio.lowest) args
     *)

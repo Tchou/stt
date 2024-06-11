@@ -21,7 +21,6 @@ let apply_gen var t =
   and loop_node n =
     try fst (HNode.find memo n) with
       Not_found ->
-      Format.eprintf "%d\n%!" @@ Typ.Node.hash n ;
       let nnode = Typ.make () in
       HNode.add memo n (nnode, Typ.empty);
       let d = Typ.descr n in
@@ -41,11 +40,7 @@ let apply_gen var t =
   res
 
 let apply s t =
-  Format.eprintf "before apply\n%!" ;
-  let res = apply_gen (fun v -> try VMap.find v s with Not_found -> Typ.var v) t
-  in
-  Format.eprintf "after apply\n%!" ;
-  res
+  apply_gen (fun v -> try VMap.find v s with Not_found -> Typ.var v) t
 
 
 let refresh t =
