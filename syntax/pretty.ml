@@ -33,7 +33,7 @@ and t = {
   type level
   val lowest : level
 
-  priorité pour Item (objet sans ou etc)..
+  priorité pour Item (objet sans ou etc)
                 Neg, 
                 Cap, Diff, 
                 Cup
@@ -380,15 +380,32 @@ let decompile t =
                  (q : int) : unit =
       if Typ.subtype Builtins.nil t then
         finals := q :: !finals ;
+      let vp, vn = Typ.toplevel_vars t in
+      if not Var.Set.(is_empty vp && is_empty vn) then
+        raise Exit ;
       states := (t, q) :: !states ;
-      let prod = 
-        match List.of_seq @@ Typ.VarProduct.(full_dnf (get t)) with
+      let prod =
+        Typ.VarProduct.(full_dnf (get t))
+               |> Seq.map (fun ((vp, vn), (pl, nl)) ->
+                   match vp, vn with
+                   | [], [] -> (List.map extract pl,
+                    List.map extract nl)
+                   | _ -> raise Exit
+                 )
+        (* match List.of_seq @@ Typ.VarProduct.(full_dnf (get t)) with
         | [ (([], []), (pl, nl)) ] -> 
           List.to_seq [(
             List.map extract pl,
             List.map extract nl
           )]
-        | _ -> raise Exit (* toplevel variable *)
+        | [] -> Format.eprintf "empty list\n%!" ;
+          raise Exit
+        | l -> List.iter (
+          fun ((vp, vn), _) ->
+            Format.eprintf "%a, %a ____ " Var.Set.pp (Var.Set.of_list vp) Var.Set.pp (Var.Set.of_list vn)
+
+        ) l ; Format.eprintf "\n%!" ; raise Exit *)
+        (* | _ -> raise Exit (* toplevel variable *) *)
       in
       let norm = Normal.normal prod in
       let todo = 

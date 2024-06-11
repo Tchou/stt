@@ -7,5 +7,6 @@ type t =
 
 Flatten les list
 Simplifier (sauf diff : pas toucher)
+  => Simplifier comment????????? Oublire
 
 Avec hypothèse que t.Item print que des types "atomiques"
