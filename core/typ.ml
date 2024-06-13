@@ -17,27 +17,35 @@ module VarEnum = struct
   include Bdd.Make(Var)(Enum)
   let get t = t.enum
   let set enum t = { t with enum }
-  let export _ = assert false
+  let export _ = 
+    Format.eprintf "export error : VarEnum\n%!" ;
+    assert false
 end
 
 module VarInt = struct
   include Bdd.Make(Var)(Int)
   let get t = t.int
   let set int t = { t with int }
-  let export _ = assert false
+  let export _ =
+    Format.eprintf "export error : VarInt\n%!" ;
+    assert false
 end
 
 module VarChar = struct
   include Bdd.Make(Var)(Char)
   let get t = t.char
   let set char t = { t with char }
-  let export _ = assert false
+  let export _ = 
+    Format.eprintf "export error : VarChar\n%!" ;
+    assert false
 end
 module VarUnit = struct
   include Bdd.Make(Var)(Unit)
   let get t = t.unit
   let set unit t = {t with unit }
-  let export _ = assert false
+  let export _ = 
+    Format.eprintf "export error : VarUnit\n%!" ;
+    assert false
 end
 
 module rec Descr:
@@ -159,13 +167,17 @@ module VarProduct = struct
   include VarProduct_
   let get t = t.product
   let set product t = { t with product }
-  let export _ = assert false
+  let export _ = 
+    Format.eprintf "export error : VarProduct\n%!" ;
+    assert false
 end
 module VarArrow = struct
   include VarProduct_
   let get t = t.arrow
   let set arrow t = { t with arrow }
-  let export _ = assert false
+  let export _ = 
+    Format.eprintf "export error : VarArrow\n%!" ;
+    assert false
 end
 include Descr
 type descr = t

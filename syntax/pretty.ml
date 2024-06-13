@@ -216,7 +216,37 @@ let pr_basic (module M : Typ.Basic) t acc =
   else if M.Leaf.is_any l then 
     M.(mk (set (get t) Typ.empty) @@ str_descr Leaf.name) :: acc
   else
-    (mk t @@ Printer (fun ppf -> M.Leaf.pp ppf l)) :: acc
+    let open Base in
+    let export_to_t (t, sg : M.t * Pr_basic.single) : t =
+      match sg with
+      | Singleton f -> 
+        mk M.(set t Typ.empty) @@ Printer f
+      | Range (f, f') ->
+        let f =
+          fun (fmt : formatter)
+              (_ : unit) : unit ->
+            f fmt
+        in
+        let f' =
+          fun (fmt : formatter)
+              (_ : unit) : unit ->
+            f' fmt
+        in
+        mk M.(set t Typ.empty) @@ Printer (
+          fun (fmt : formatter) : unit ->
+            fprintf fmt "%a--%a" f () f' ()
+        )
+    in
+    let is_diff, union = M.(export @@ get t) in
+    let t =
+      if is_diff then
+        let t1 = M.(mk Typ.any @@ str_descr Leaf.name) in
+        let t2 = pcup @@ List.map export_to_t union in
+        diff t1 t2
+      else
+        pcup @@ List.map export_to_t union
+    in
+    t :: acc
 
 let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
 
@@ -360,22 +390,8 @@ let decompile t =
                    match vp, vn with
                    | [], [] -> (List.map extract pl,
                     List.map extract nl)
-                   | _ -> raise Exit
+                   | _ -> raise Exit (* toplevel variables *)
                  )
-        (* match List.of_seq @@ Typ.VarProduct.(full_dnf (get t)) with
-        | [ (([], []), (pl, nl)) ] -> 
-          List.to_seq [(
-            List.map extract pl,
-            List.map extract nl
-          )]
-        | [] -> Format.eprintf "empty list\n%!" ;
-          raise Exit
-        | l -> List.iter (
-          fun ((vp, vn), _) ->
-            Format.eprintf "%a, %a ____ " Var.Set.pp (Var.Set.of_list vp) Var.Set.pp (Var.Set.of_list vn)
-
-        ) l ; Format.eprintf "\n%!" ; raise Exit *)
-        (* | _ -> raise Exit (* toplevel variable *) *)
       in
       let norm = Normal.normal prod in
       let todo = 
