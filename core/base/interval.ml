@@ -105,11 +105,14 @@ module Make (X : V) = struct
             fun (fmt : Format.formatter) : unit ->
               Format.fprintf fmt "%a" X.pp a
           in
-          let f' =
-            fun (fmt : Format.formatter) : unit ->
-              Format.fprintf fmt "%a" X.pp b
-          in
-          (range a b, Pr_basic.Range (f, f')) :: acc
+          if a = b then
+            (singleton a, Pr_basic.Singleton f) :: acc
+          else
+            let f' =
+              fun (fmt : Format.formatter) : unit ->
+                Format.fprintf fmt "%a" X.pp b
+            in
+            (range a b, Pr_basic.Range (f, f')) :: acc
       ) 
       t []
     )
