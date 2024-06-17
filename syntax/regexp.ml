@@ -131,19 +131,19 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
         "(" ^ (String.concat "|" @@ List.map loop l) ^ ")"
       | Star r -> (
           match r with
-          | Letter _
+          (* | Letter _ *)
           | Union _ -> loop r ^ "*"
           | _ -> "(" ^ loop r ^ ")*"
         )
       | Plus r -> (
           match r with
-          | Letter _
+          (* | Letter _ *)
           | Union _ -> loop r ^ "+"
           | _ -> "(" ^ loop r ^ ")+"
         )
       | Option r -> (
           match r with
-          | Letter _
+          (* | Letter _ *)
           | Union _ -> loop r ^ "?"
           | _ -> "(" ^ loop r ^ ")?"
         )

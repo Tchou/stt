@@ -2,60 +2,68 @@ Test: 'Base.Bdd' (3/3)
       Serie: 'Base.Bdd.union': (4/4)
              
              'Base.Bdd.union.1': PASSED
-                 expected: False
-                   result: False
+                 expected: +False
+                   result: +False
              'Base.Bdd.union.2': PASSED
-                 expected: True (1,Unit)
-                   result: True (1,Unit)
+                 expected: +True (1,Unit)
+                   result: +True (1,Unit)
              'Base.Bdd.union.3': PASSED
-                 expected: Node (6, "A", False,
-                                 Node (5, "B", False,
-                                       Node (4, "C", False, True (1,Unit))))
-                   result: Node (6, "A", False,
-                                 Node (5, "B", False,
-                                       Node (4, "C", False, True (1,Unit))))
+                 expected: +Node (6, "A", -False,
+                                  +Node (5, "B", -False,
+                                         +Node (4, "C", -False,
+                                                +True (1,Unit))))
+                   result: +Node (6, "A", -False,
+                                  +Node (5, "B", -False,
+                                         +Node (4, "C", -False,
+                                                +True (1,Unit))))
              'Base.Bdd.union.4': PASSED
-                 expected: Node (5, "B", False,
-                                 Node (4, "C", False, True (1,Unit)))
-                   result: Node (5, "B", False,
-                                 Node (4, "C", False, True (1,Unit)))
+                 expected: +Node (5, "B", -False,
+                                  +Node (4, "C", -False, +True (1,Unit)))
+                   result: +Node (5, "B", -False,
+                                  +Node (4, "C", -False, +True (1,Unit)))
              
       
       Serie: 'Base.Bdd.inter': (4/4)
              
              'Base.Bdd.inter.1': PASSED
-                 expected: True (1,Unit)
-                   result: True (1,Unit)
+                 expected: +True (1,Unit)
+                   result: +True (1,Unit)
              'Base.Bdd.inter.2': PASSED
-                 expected: False
-                   result: False
+                 expected: +False
+                   result: +False
              'Base.Bdd.inter.3': PASSED
-                 expected: Node (6, "A", False,
-                                 Node (5, "B", False,
-                                       Node (4, "C", False, True (1,Unit))))
-                   result: Node (6, "A", False,
-                                 Node (5, "B", False,
-                                       Node (4, "C", False, True (1,Unit))))
+                 expected: +Node (6, "A", -False,
+                                  +Node (5, "B", -False,
+                                         +Node (4, "C", -False,
+                                                +True (1,Unit))))
+                   result: +Node (6, "A", -False,
+                                  +Node (5, "B", -False,
+                                         +Node (4, "C", -False,
+                                                +True (1,Unit))))
              'Base.Bdd.inter.4': PASSED
-                 expected: Node (14, "A",
-                                 Node (13, "B", False,
-                                       Node (11, "C", True (1,Unit), False)),
-                                 Node (10, "B",
-                                       Node (4, "C", False, True (1,Unit)),
-                                       True (1,Unit)))
-                   result: Node (14, "A",
-                                 Node (13, "B", False,
-                                       Node (11, "C", True (1,Unit), False)),
-                                 Node (10, "B",
-                                       Node (4, "C", False, True (1,Unit)),
-                                       True (1,Unit)))
+                 expected: +Node (14, "A",
+                                  -Node (13, "B", -False,
+                                         +Node (11, "C", -True (1,Unit),
+                                                +False)),
+                                  +Node (10, "B",
+                                         -Node (4, "C", -False,
+                                                +True (1,Unit)),
+                                         +True (1,Unit)))
+                   result: +Node (14, "A",
+                                  -Node (13, "B", -False,
+                                         +Node (11, "C", -True (1,Unit),
+                                                +False)),
+                                  +Node (10, "B",
+                                         -Node (4, "C", -False,
+                                                +True (1,Unit)),
+                                         +True (1,Unit)))
              
       
       Serie: 'Base.Bdd.dnf': (1/1)
              
              'Base.Bdd.dnf.1': PASSED
-                 expected: [((["B"], ["C"; "A"]), Unit); ((["C"; "A"], ["B"]), Unit); ((["B"; "A"], []), Unit)]
-                   result: [((["B"], ["C"; "A"]), Unit); ((["C"; "A"], ["B"]), Unit); ((["B"; "A"], []), Unit)]
+                 expected: [((["B"], ["C"; "A"]), Unit); ((["C"; "A"], []), Unit); ((["B"; "A"], []), Unit)]
+                   result: [((["B"], ["C"; "A"]), Unit); ((["C"; "A"], []), Unit); ((["B"; "A"], []), Unit)]
              
       
       
@@ -63,20 +71,20 @@ Test: 'Char' (3/3)
       Serie: 'Char.union': (5/5)
              
              'Char.union.1': PASSED
-                 expected: 'A'--'Z'
-                   result: 'A'--'Z'
+                 expected: (false, A--Z)
+                   result: (false, A--Z)
              'Char.union.2': PASSED
-                 expected: 'A'--'Z'
-                   result: 'A'--'Z'
+                 expected: (false, A--Z)
+                   result: (false, A--Z)
              'Char.union.3': PASSED
-                 expected: 'A'--'E'
-                   result: 'A'--'E'
+                 expected: (false, A--E)
+                   result: (false, A--E)
              'Char.union.4': PASSED
                  expected: Char
                    result: Char
              'Char.union.5': PASSED
-                 expected: 'A'--'Ĭ'|'Ş'--'Ɛ'|'ƒ'--'΄'
-                   result: 'A'--'Ĭ'|'Ş'--'Ɛ'|'ƒ'--'΄'
+                 expected: (false, A--Ĭ, Ş--Ɛ, ƒ--΄)
+                   result: (false, A--Ĭ, Ş--Ɛ, ƒ--΄)
              
       
       Serie: 'Char.inter': (5/5)
@@ -85,17 +93,17 @@ Test: 'Char' (3/3)
                  expected: Empty
                    result: Empty
              'Char.inter.2': PASSED
-                 expected: 'D'--'G'
-                   result: 'D'--'G'
+                 expected: (false, D--G)
+                   result: (false, D--G)
              'Char.inter.3': PASSED
-                 expected: 'A'|'E'
-                   result: 'A'|'E'
+                 expected: (false, A, E)
+                   result: (false, A, E)
              'Char.inter.4': PASSED
                  expected: Char
                    result: Char
              'Char.inter.5': PASSED
-                 expected: 'F'--'d'|'ÿ'|'ǂ'--'̠'
-                   result: 'F'--'d'|'ÿ'|'ǂ'--'̠'
+                 expected: (false, F--d, ÿ, ǂ--̠)
+                   result: (false, F--d, ÿ, ǂ--̠)
              
       
       Serie: 'Char.diff': (6/6)
@@ -110,14 +118,14 @@ Test: 'Char' (3/3)
                  expected: Empty
                    result: Empty
              'Char.diff.4': PASSED
-                 expected: '\u0'--'@'|'['--'\u10ffff'
-                   result: '\u0'--'@'|'['--'\u10ffff'
+                 expected: (false, \u{0000}--@, [--\u{10ffff})
+                   result: (false, \u{0000}--@, [--\u{10ffff})
              'Char.diff.5': PASSED
-                 expected: 'A'--'E'|'Ā'--'Ĭ'|'̡'--'΄'
-                   result: 'A'--'E'|'Ā'--'Ĭ'|'̡'--'΄'
+                 expected: (false, A--E, Ā--Ĭ, ̡--΄)
+                   result: (false, A--E, Ā--Ĭ, ̡--΄)
              'Char.diff.6': PASSED
-                 expected: 'e'--'þ'|'Ş'--'Ɛ'|'ƒ'--'ǁ'
-                   result: 'e'--'þ'|'Ş'--'Ɛ'|'ƒ'--'ǁ'
+                 expected: (false, e--þ, Ş--Ɛ, ƒ--ǁ)
+                   result: (false, e--þ, Ş--Ɛ, ƒ--ǁ)
              
       
       
@@ -141,17 +149,17 @@ Test: 'Enum' (4/4)
       Serie: 'Enum.neg': (4/4)
              
              'Enum.neg.1': PASSED
-                 expected: Atom
-                   result: Atom
+                 expected: Enum
+                   result: Enum
              'Enum.neg.2': PASSED
                  expected: Empty
                    result: Empty
              'Enum.neg.3': PASSED
-                 expected: `A|`B|`C|`D
-                   result: `A|`B|`C|`D
+                 expected: (false, `D, `C, `B, `A)
+                   result: (false, `D, `C, `B, `A)
              'Enum.neg.4': PASSED
-                 expected: Atom\(`A|`B|`C|`D)
-                   result: Atom\(`A|`B|`C|`D)
+                 expected: (true, `D, `C, `B, `A)
+                   result: (true, `D, `C, `B, `A)
              
       
       Serie: 'Enum.union': (6/6)
@@ -160,27 +168,27 @@ Test: 'Enum' (4/4)
                  expected: Empty
                    result: Empty
              'Enum.union.2': PASSED
-                 expected: Atom
-                   result: Atom
+                 expected: Enum
+                   result: Enum
              'Enum.union.3': PASSED
-                 expected: Atom
-                   result: Atom
+                 expected: Enum
+                   result: Enum
              'Enum.union.4': PASSED
-                 expected: `A|`B|`C|`D|`E|`F|`G
-                   result: `A|`B|`C|`D|`E|`F|`G
+                 expected: (false, `G, `F, `E, `D, `C, `B, `A)
+                   result: (false, `G, `F, `E, `D, `C, `B, `A)
              'Enum.union.5': PASSED
-                 expected: Atom\(`A|`B)
-                   result: Atom\(`A|`B)
+                 expected: (true, `B, `A)
+                   result: (true, `B, `A)
              'Enum.union.6': PASSED
-                 expected: Atom\(`E|`F|`G)
-                   result: Atom\(`E|`F|`G)
+                 expected: (true, `G, `F, `E)
+                   result: (true, `G, `F, `E)
              
       
       Serie: 'Enum.inter': (7/7)
              
              'Enum.inter.1': PASSED
-                 expected: Atom
-                   result: Atom
+                 expected: Enum
+                   result: Enum
              'Enum.inter.2': PASSED
                  expected: Empty
                    result: Empty
@@ -188,17 +196,17 @@ Test: 'Enum' (4/4)
                  expected: Empty
                    result: Empty
              'Enum.inter.4': PASSED
-                 expected: `A
-                   result: `A
+                 expected: (false, `A)
+                   result: (false, `A)
              'Enum.inter.5': PASSED
-                 expected: `A|`B
-                   result: `A|`B
+                 expected: (false, `B, `A)
+                   result: (false, `B, `A)
              'Enum.inter.6': PASSED
-                 expected: Atom\(`A|`B|`C|`D|`E|`F|`G)
-                   result: Atom\(`A|`B|`C|`D|`E|`F|`G)
+                 expected: (true, `G, `F, `E, `D, `C, `B, `A)
+                   result: (true, `G, `F, `E, `D, `C, `B, `A)
              'Enum.inter.7': PASSED
-                 expected: `C|`D
-                   result: `C|`D
+                 expected: (false, `D, `C)
+                   result: (false, `D, `C)
              
       
       
@@ -215,11 +223,11 @@ Test: 'Int' (3/3)
                  expected: Int
                    result: Int
              'Int.union.4': PASSED
-                 expected: 65--300|350--400|402--900
-                   result: 65--300|350--400|402--900
+                 expected: (false, 65--300, 350--400, 402--900)
+                   result: (false, 65--300, 350--400, 402--900)
              'Int.union.5': PASSED
-                 expected: 0--39
-                   result: 0--39
+                 expected: (false, 0--39)
+                   result: (false, 0--39)
              
       
       Serie: 'Int.inter': (6/6)
@@ -228,17 +236,17 @@ Test: 'Int' (3/3)
                  expected: Int
                    result: Int
              'Int.inter.2': PASSED
-                 expected: 10--100
-                   result: 10--100
+                 expected: (false, 10--100)
+                   result: (false, 10--100)
              'Int.inter.3': PASSED
                  expected: Empty
                    result: Empty
              'Int.inter.4': PASSED
-                 expected: -1--1
-                   result: -1--1
+                 expected: (false, -1--1)
+                   result: (false, -1--1)
              'Int.inter.5': PASSED
-                 expected: 70--100|255|450--800
-                   result: 70--100|255|450--800
+                 expected: (false, 70--100, 255, 450--800)
+                   result: (false, 70--100, 255, 450--800)
              'Int.inter.6': PASSED
                  expected: Empty
                    result: Empty
@@ -256,17 +264,19 @@ Test: 'Int' (3/3)
                  expected: Empty
                    result: Empty
              'Int.diff.4': PASSED
-                 expected: -*---1|1--*
-                   result: -*---1|1--*
+                 expected: (false, -*---1, 1--*)
+                   result: (false, -*---1, 1--*)
              'Int.diff.5': PASSED
-                 expected: 65--69|256--300|801--900
-                   result: 65--69|256--300|801--900
+                 expected: (false, 65--69, 256--300, 801--900)
+                   result: (false, 65--69, 256--300, 801--900)
              'Int.diff.6': PASSED
-                 expected: 101--254|350--400|402--449
-                   result: 101--254|350--400|402--449
+                 expected: (false, 101--254, 350--400, 402--449)
+                   result: (false, 101--254, 350--400, 402--449)
              'Int.diff.7': PASSED
-                 expected: 1|3|5|7|9|11|13|15|17|19|21|23|25|27|29|31|33|35|37|39
-                   result: 1|3|5|7|9|11|13|15|17|19|21|23|25|27|29|31|33|35|37|39
+                 expected: (false, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 
+                           21, 23, 25, 27, 29, 31, 33, 35, 37, 39)
+                   result: (false, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 
+                           21, 23, 25, 27, 29, 31, 33, 35, 37, 39)
              
       
       
