@@ -109,10 +109,10 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
 
   let to_string (pp_lt : Format.formatter -> lt -> unit)
                 (r : t_ext) : string =
-    (* let rec loop (r : t_ext) : string =
+    let rec loop (r : t_ext) : string =
       match r with
       | Letter l ->
-        Format.asprintf "%a" pp_lt l
+        Format.asprintf "(%a)" pp_lt l
       | Concat l ->
         String.concat ";" @@ List.map loop l
       | Union l ->
@@ -120,33 +120,6 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
       | Star r -> "(" ^ loop r ^ ")*"
       | Plus r -> "(" ^ loop r ^ ")+"
       | Option r -> "(" ^ loop r ^ ")?"
-    in *)
-    let rec loop (r : t_ext) : string =
-      match r with
-      | Letter l ->
-        Format.asprintf "%a" pp_lt l
-      | Concat l ->
-        String.concat ";" @@ List.map loop l
-      | Union l ->
-        "(" ^ (String.concat "|" @@ List.map loop l) ^ ")"
-      | Star r -> (
-          match r with
-          (* | Letter _ *)
-          | Union _ -> loop r ^ "*"
-          | _ -> "(" ^ loop r ^ ")*"
-        )
-      | Plus r -> (
-          match r with
-          (* | Letter _ *)
-          | Union _ -> loop r ^ "+"
-          | _ -> "(" ^ loop r ^ ")+"
-        )
-      | Option r -> (
-          match r with
-          (* | Letter _ *)
-          | Union _ -> loop r ^ "?"
-          | _ -> "(" ^ loop r ^ ")?"
-        )
     in
     loop @@ flatten r
 

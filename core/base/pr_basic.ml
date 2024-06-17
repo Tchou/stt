@@ -7,10 +7,8 @@ type single =
   | Range of pr * pr
 
 type 'a t = bool (* [true] if it's a diff like Enum\{`A|...}, 
-                    [false] otherwise like `True|`False *)
+                    [false] otherwise like `A|`B *)
             * ('a * single) list
-
-let ignore2 _ _ = ()
 
 let pr_string (s : string)
               (fmt : formatter) : unit =

@@ -10,12 +10,28 @@ end
 include FiniteCofinite.Make (H)
 
 let name = "Enum"
-(* let bool = S.of_list [
+
+(* 
+    TODO : print "Bool" instead of "`true | `false"
+
+let export s =
+  let bool = S.of_list [
     (Hstring.cons "true");
     (Hstring.cons "false")
-  ] *)
+  ]
+  in
+  let c, s' =
+    match s with
+    | `Finite s -> false, s
+    | `Cofinite s -> true, s
+  in
+  if S.equal s' bool then
+    c, [ s, Pr_basic.Singleton (fun fmt -> Format.fprintf fmt "Bool") ]
+  else
+    export s *)
+
 let pp fmt s =
-  Base.Pr_basic.(pp ~pp_any:(pr_string name) fmt @@ export s)
+  Pr_basic.(pp ~pp_any:(pr_string name) fmt @@ export s)
 
 let sample = function
   | `Finite s -> S.min_elt_opt s
