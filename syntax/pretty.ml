@@ -342,7 +342,6 @@ let decompile t =
           in
           cup (diff t ts) ts', acc
     in
-    (* TODO : voir pour Enum (genre pour Bool) *)
     let acc = pr_basic (module VarEnum) (module Enum) t acc in
     let acc = pr_basic (module VarInt) (module Int) t acc in
     let acc = pr_basic (module VarChar) (module Char) t acc in
@@ -425,9 +424,14 @@ let decompile t =
         @@ to_regex_my auto
       )
       in
-      let printer fmt = 
-        let s = Regexp.pp (fun fmt lt -> pr Prio.lowest fmt lt.descr) regexp in
-        Format.fprintf fmt "@[[%s]@]" s
+      let printer fmt =
+        let f = 
+          fun (fmt : formatter) 
+              (lt : lt) : unit -> 
+            pr Prio.lowest fmt lt.descr
+        in
+        let s = Regexp.to_string f regexp in
+        Format.fprintf fmt "[%s]" s
       in
       Typ.empty, Some (mk t @@ Printer printer)
     with Exit ->

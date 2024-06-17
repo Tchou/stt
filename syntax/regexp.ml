@@ -15,7 +15,7 @@ module type S = sig
 
   val simp_to_ext : t_simp -> t_ext
   
-  val pp : (Format.formatter -> lt -> unit) -> t_ext -> string
+  val to_string : (Format.formatter -> lt -> unit) -> t_ext -> string
 
   val simplify : t_ext -> t_ext
 
@@ -107,19 +107,46 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
     | Plus r -> Plus (flatten r)
     | Option r -> Option (flatten r)
 
-  let pp (pp_lt : Format.formatter -> lt -> unit)
-         (r : t_ext) : string =
-    let rec loop (r : t_ext) : string =
+  let to_string (pp_lt : Format.formatter -> lt -> unit)
+                (r : t_ext) : string =
+    (* let rec loop (r : t_ext) : string =
       match r with
       | Letter l ->
-        Format.asprintf "(%a)" pp_lt l
+        Format.asprintf "%a" pp_lt l
       | Concat l ->
-        "(" ^ String.concat ";" (List.map loop l) ^ ")"
+        String.concat ";" @@ List.map loop l
       | Union l ->
         "(" ^ (String.concat "|" @@ List.map loop l) ^ ")"
       | Star r -> "(" ^ loop r ^ ")*"
       | Plus r -> "(" ^ loop r ^ ")+"
       | Option r -> "(" ^ loop r ^ ")?"
+    in *)
+    let rec loop (r : t_ext) : string =
+      match r with
+      | Letter l ->
+        Format.asprintf "%a" pp_lt l
+      | Concat l ->
+        String.concat ";" @@ List.map loop l
+      | Union l ->
+        "(" ^ (String.concat "|" @@ List.map loop l) ^ ")"
+      | Star r -> (
+          match r with
+          | Letter _
+          | Union _ -> loop r ^ "*"
+          | _ -> "(" ^ loop r ^ ")*"
+        )
+      | Plus r -> (
+          match r with
+          | Letter _
+          | Union _ -> loop r ^ "+"
+          | _ -> "(" ^ loop r ^ ")+"
+        )
+      | Option r -> (
+          match r with
+          | Letter _
+          | Union _ -> loop r ^ "?"
+          | _ -> "(" ^ loop r ^ ")?"
+        )
     in
     loop @@ flatten r
 
