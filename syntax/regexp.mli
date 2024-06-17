@@ -27,9 +27,9 @@ module type S = sig
   (** [simp_to_ext r] extends the simple regex [r], in order to simplify 
     or print it *)
 
-  val pp : (Format.formatter -> lt -> unit) -> t_ext -> string
-  (** [pp pp_lt r] cast the regex [r] into a string, using [pp_lt] to cast
-    the letter*)
+  val to_string : (Format.formatter -> lt -> unit) -> t_ext -> string
+  (** [to_string pp_lt r] cast the regex [r] into a string, using 
+    [pp_lt] to cast the letter*)
 
   val simplify : t_ext -> t_ext
   (** [simplify r] normalizes and simplfies the regex [r] as much as possible *)
