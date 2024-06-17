@@ -209,7 +209,8 @@ let get_leaf (type t) (module M : Typ.Basic with type Leaf.t = t) t =
   | Seq.Cons((([], []), l), _ ) -> l
   | _ -> assert false
 
-let pr_basic (module M : Typ.Basic) t acc =
+let pr_basic (type a) (module M : Typ.Basic with type Leaf.t = a) 
+             (module E : Base.Sigs.Printable with type t = a) t acc =
   let l = get_leaf (module M) t in
   if M.Leaf.is_empty l then 
     acc 
@@ -217,30 +218,20 @@ let pr_basic (module M : Typ.Basic) t acc =
     M.(mk (set (get t) Typ.empty) @@ str_descr Leaf.name) :: acc
   else
     let open Base in
-    let export_to_t (t, sg : M.t * Pr_basic.single) : t =
+    let export_to_t (t, sg : M.Leaf.t * Pr_basic.single) : t =
       match sg with
       | Singleton f -> 
-        mk M.(set t Typ.empty) @@ Printer f
+        mk M.(set (leaf t) Typ.empty) @@ Printer f
       | Range (f, f') ->
-        let f =
-          fun (fmt : formatter)
-              (_ : unit) : unit ->
-            f fmt
-        in
-        let f' =
-          fun (fmt : formatter)
-              (_ : unit) : unit ->
-            f' fmt
-        in
-        mk M.(set t Typ.empty) @@ Printer (
+        mk M.(set (leaf t) Typ.empty) @@ Printer (
           fun (fmt : formatter) : unit ->
-            fprintf fmt "%a--%a" f () f' ()
+            fprintf fmt "%t--%t" f f'
         )
     in
-    let is_diff, union = M.(export @@ get t) in
+    let is_diff, union = E.export l in
     let t =
       if is_diff then
-        let t1 = M.(mk Typ.any @@ str_descr Leaf.name) in
+        let t1 = M.(mk (set (get t) Typ.empty) @@ str_descr Leaf.name) in
         let t2 = pcup @@ List.map export_to_t union in
         diff t1 t2
       else
@@ -349,10 +340,11 @@ let decompile t =
           in
           cup (diff t ts) ts', acc
     in
-    let acc = pr_basic (module VarEnum) t acc in
-    let acc = pr_basic (module VarInt) t acc in
-    let acc = pr_basic (module VarChar) t acc in
-    let acc = pr_basic (module VarUnit) t acc in
+    (* TODO : voir pour Enum (genre pour Bool) *)
+    let acc = pr_basic (module VarEnum) (module Enum) t acc in
+    let acc = pr_basic (module VarInt) (module Int) t acc in
+    let acc = pr_basic (module VarChar) (module Char) t acc in
+    let acc = pr_basic (module VarUnit) (module Unit) t acc in
     let acc = pr_constr (module VarProduct : Basic with type Leaf.t = Product.t)
         (module Product : Base.Sigs.Bdd with type t = Product.t
                                          and type atom = Product.atom

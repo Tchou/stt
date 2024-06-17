@@ -36,16 +36,11 @@ module X = struct
   let pred = function Num x -> Num (Z.pred x) | _ -> failwith "pred"
 end
 
-module I = Interval.Make (X)
+include Interval.Make (X)
 
 let name = "Int"
 
-type t = I.t
 type elem = Z.t
-
-let compare = I.compare
-let equal = I.equal
-let hash = I.hash
 
 let pp_pair fmt (a, b) =
   let open Format in
@@ -54,25 +49,14 @@ let pp_pair fmt (a, b) =
 
 let pp fmt l =
   let open Format in
-  if I.is_any l then pp_print_string fmt name
-  else if I.is_empty l then pp_print_string fmt "Empty"
+  if is_any l then pp_print_string fmt name
+  else if is_empty l then pp_print_string fmt "Empty"
   else pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "|") pp_pair fmt l
 
-let export _ = assert false
-
-let empty = I.empty
-let is_empty = I.is_empty
-let any = I.any
-let is_any = I.is_any
-let cup = I.cup
-let cap = I.cap
-let diff = I.diff
-let neg = I.neg
-let intersect = I.intersect
-let mem x i = I.mem (Num x) i
-let left a = I.range X.NegInf (X.Num a)
-let right a = I.range (X.Num a) X.PosInf
-let range a b = I.range (X.Num a) (X.Num b)
+let mem x i = mem (Num x) i
+let left a = range X.NegInf (X.Num a)
+let right a = range (X.Num a) X.PosInf
+let range a b = range (X.Num a) (X.Num b)
 let singleton a = range a a
 
 let sample i =
