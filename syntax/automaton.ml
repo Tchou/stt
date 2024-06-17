@@ -158,16 +158,13 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
   let check_word (automaton : t) 
                  (word : lt list) : bool =
     let end_states =
-      List.fold_left
-      (
+      List.fold_left (
         fun (current_states : states) 
             (letter : lt) : states ->
-          StateSet.fold
-          (
+          StateSet.fold (
             fun (s : state)
                 (next_states : states) : states ->
-              let next_states_for_s = TransSet.fold
-                (
+              let next_states_for_s = TransSet.fold (
                   fun (s1, l, s2 : trans)
                       (next_states_labeled_letter : states) : states ->
                     if s = s1 && Lt.compare letter l = 0 then

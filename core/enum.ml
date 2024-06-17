@@ -1,7 +1,13 @@
 open Base
 
-include FiniteCofinite.Make (Hstring)
 let pp_enum fmt (s: Hstring.t) = Format.fprintf fmt "`%s" Hstring.(!!s)
+module H = struct
+  include Hstring
+
+  let pp = pp_enum
+end
+
+include FiniteCofinite.Make (H)
 
 let name = "Enum"
 let bool = S.of_list [
@@ -25,6 +31,13 @@ let pp fmt (s:t) =
       if c && ll <> [] then fprintf fmt ")"
   end;
   fprintf fmt "@]"
+
+let export s =
+  let c, s' = match s with `Finite s -> false, s | `Cofinite s -> true, s in
+  if S.equal s' bool then
+    c, [ s, Pr_basic.Singleton (fun fmt -> Format.fprintf fmt "Bool") ]
+  else
+    export s
 
 let sample = function
   | `Finite s -> S.min_elt_opt s
