@@ -12,8 +12,10 @@ type t_descr =
   | Neg of t
   (*  | Apply of Name.t * t list *)
   | Rec of t * (Name.t * t) list
-and t = { typ : Typ.t ;
-          descr  : t_descr }
+and t = {
+  typ : Typ.t ;
+  descr : t_descr
+}
 
 module Prio : sig
   type level = private int
@@ -167,7 +169,7 @@ let is_any t = Typ.(subtype any t)
 let pcap l = match l with
     [] -> assert false
   | [ t ] -> t
-  | _ ->
+  | _ -> 
     let typ = List.fold_left (fun acc t -> Typ.cap t.typ acc) Typ.any l in
     mk typ (Cap l)
 
