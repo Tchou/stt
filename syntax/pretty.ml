@@ -219,14 +219,8 @@ let pr_basic (type a) (module M : Typ.Basic with type Leaf.t = a)
   else
     let open Base in
     let export_to_t (t, sg : M.Leaf.t * Pr_basic.single) : t =
-      match sg with
-      | Singleton f -> 
-        mk M.(set (leaf t) Typ.empty) @@ Printer f
-      | Range (f, f') ->
-        mk M.(set (leaf t) Typ.empty) @@ Printer (
-          fun (fmt : formatter) : unit ->
-            fprintf fmt "%t--%t" f f'
-        )
+      let f fmt : unit = Pr_basic.pp_single fmt sg in
+      mk M.(set (leaf t) Typ.empty) @@ Printer f
     in
     let is_diff, union = E.export l in
     let t =

@@ -42,16 +42,8 @@ let name = "Int"
 
 type elem = Z.t
 
-let pp_pair fmt (a, b) =
-  let open Format in
-  fprintf fmt "%a" X.pp a;
-  if not (X.equal a b) then fprintf fmt "--%a" X.pp b
-
 let pp fmt l =
-  let open Format in
-  if is_any l then pp_print_string fmt name
-  else if is_empty l then pp_print_string fmt "Empty"
-  else pp_print_list ~pp_sep:(fun fmt () -> fprintf fmt "|") pp_pair fmt l
+  Base.Pr_basic.(pp ~pp_any:(pr_string name) fmt @@ export l)
 
 let mem x i = mem (Num x) i
 let left a = range X.NegInf (X.Num a)
