@@ -112,7 +112,7 @@ let rec lexer lexbuf =
   | "=" -> EQUAL
 
   (* Constants *)
-  | digit  -> INT (Z.of_string (Utf8.lexeme lexbuf))
+  | number -> INT (Z.of_string (Utf8.lexeme lexbuf))
   | '"'   -> Buf.reset str_buf; string lexbuf
   | '\'', normal_char, '\'' -> CHAR (sub_lexeme lexbuf 1 1).(0)
   | '\'', unicode_esc_char, '\'' ->

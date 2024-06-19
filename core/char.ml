@@ -8,11 +8,11 @@ let pp_char fmt u =
     || i == 0x7f
     || (i >= 0x80 && i <= 0x9f)
     || i >= 0x40000
-  then Format.fprintf fmt "\\u{%04x}" i
+  then Format.fprintf fmt "'\\u{%04x}'" i
   else
     let b = Buffer.create 4 in
     let () = Buffer.add_utf_8_uchar b u in
-    Format.pp_print_string fmt (Buffer.contents b)
+    Format.fprintf fmt "'%s'" (Buffer.contents b)
 
 include Interval.Make (struct
     include Uchar

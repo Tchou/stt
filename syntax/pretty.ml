@@ -17,26 +17,20 @@ and t = {
   descr : t_descr
 }
 
-module Prio : sig
-  type level = private int
-  val level : t_descr -> level
-  val lowest : level
-end =
-struct
-  type level = int
-  let lowest = 0
-  let level t = 
-    match t with
-    | Printer _ | Pair _  (* | Apply _ *) -> 10
-    | Neg _-> 9
-    | Cap _ | Diff _ -> 8
-    | Cup _ -> 7
-    | Arrow _ -> 6
-    | Rec _ -> 5
-end
+let level t = 
+  match t with
+  | Printer _ -> Prio.pr_printer
+  | Pair _  -> Prio.pr_pair
+  (* | Apply _ -> Prio.pr_apply*)
+  | Neg _-> Prio.pr_neg
+  | Cap _ -> Prio.pr_cap
+  | Diff _ -> Prio.pr_diff
+  | Cup _ -> Prio.pr_cup
+  | Arrow _ -> Prio.pr_arrow
+  | Rec _ -> Prio.pr_rec
 
 let rec pr ?(assoc=true) parent_level ppf t =
-  let level = Prio.level t in
+  let level = level t in
   let do_parens = level < parent_level ||
                   (level = parent_level && not assoc)
   in
@@ -267,7 +261,7 @@ let decompile t =
       } 
       let is_epsilon (t : t) = Typ.is_empty t.typ
 
-      (* let prio t = level t.descr *)
+      let prio t = level t.descr
 
     end
   in
@@ -426,13 +420,12 @@ let decompile t =
       )
       in
       let printer fmt =
-        let f = 
+        let pp_lt = 
           fun (fmt : formatter) 
               (lt : lt) : unit -> 
             pr Prio.lowest fmt lt.descr
         in
-        let s = Regexp.to_string f regexp in
-        Format.fprintf fmt "[%s]" s
+        Regexp.pp fmt pp_lt regexp
       in
       Typ.empty, Some (mk t @@ Printer printer)
     with Exit ->

@@ -13,6 +13,9 @@ module type Letter = sig
   (** The epsilon value *)
   val is_epsilon : t -> bool
   (** [is_epsilon l] checks if [l] is epsilon *)
+
+  val prio : t -> Prio.t
+  (** [prio l] returns the priority of the letter *)
   
 end
 
@@ -45,9 +48,10 @@ module type S = sig
   (** [simp_to_ext r] extends the simple regex [r], in order to simplify 
     or print it *)
 
-  val to_string : (Format.formatter -> lt -> unit) -> t_ext -> string
-  (** [to_string pp_lt r] cast the regex [r] into a string, using 
-    [pp_lt] to cast the letter*)
+  val pp : Format.formatter -> 
+    (Format.formatter -> lt -> unit) -> t_ext -> unit
+  (** [pp fmt pp_lt r] pretty-print the regex [r] in the formatter [fmt], using 
+    [pp_lt] to pretty-print a letter the letter*)
 
   val simplify : t_ext -> t_ext
   (** [simplify r] normalizes and simplfies the regex [r] as much as possible *)

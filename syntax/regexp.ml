@@ -1,15 +1,17 @@
+open Format
+
 module type Letter = sig
 
   type t
 
   val compare : t -> t -> int
 
-  val pp : Format.formatter -> t -> unit
+  val pp : formatter -> t -> unit
 
   val epsilon : t
   val is_epsilon : t -> bool
 
-  (* prio : t -> Prio.t *)
+  val prio : t -> Prio.t
   
 end
 
@@ -29,8 +31,9 @@ module type S = sig
   val star : t_simp -> t_simp
 
   val simp_to_ext : t_simp -> t_ext
-  
-  val to_string : (Format.formatter -> lt -> unit) -> t_ext -> string
+
+  val pp : Format.formatter -> 
+    (Format.formatter -> lt -> unit) -> t_ext -> unit
 
   val simplify : t_ext -> t_ext
 
@@ -122,21 +125,52 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
     | Plus r -> Plus (flatten r)
     | Option r -> Option (flatten r)
 
-  let to_string (pp_lt : Format.formatter -> lt -> unit)
-                (r : t_ext) : string =
-    let rec loop (r : t_ext) : string =
+  let pp (fmt : formatter)
+         (pp_lt : formatter -> lt -> unit)
+         (r : t_ext) : unit =
+    let open Prio in
+    let regexp_prio (r : t_ext) : Prio.t =
       match r with
-      | Letter l ->
-        Format.asprintf "(%a)" pp_lt l
-      | Concat l ->
-        String.concat ";" @@ List.map loop l
-      | Union l ->
-        "(" ^ (String.concat "|" @@ List.map loop l) ^ ")"
-      | Star r -> "(" ^ loop r ^ ")*"
-      | Plus r -> "(" ^ loop r ^ ")+"
-      | Option r -> "(" ^ loop r ^ ")?"
+      | Letter l -> Lt.prio l
+      | Concat _ -> Prio.re_concat
+      | Union _ -> Prio.re_union
+      | Star _ -> Prio.re_star
+      | Plus _ -> Prio.re_plus
+      | Option _ -> Prio.re_option
     in
-    loop @@ flatten r
+    let rec pr (parent_level : Prio.t)
+               (fmt : formatter)
+               (r : t_ext) : unit =
+      let level = regexp_prio r in
+      let pr = pr level in
+      let do_parens = Prio.compare parent_level level > 0 in
+      fprintf fmt "@[" ;
+      if do_parens then fprintf fmt "(" ;
+      let () =
+        match r with
+        | Letter lt -> fprintf fmt "%a" pp_lt lt
+        | Concat l -> fprintf fmt "@[%a@]" (pr_list ";" level) l
+        | Union l -> fprintf fmt "@[%a@]" (pr_list " |" level) l
+        | Star r -> fprintf fmt "%a*" pr r 
+        | Plus r -> fprintf fmt "%a+" pr r 
+        | Option r -> fprintf fmt "%a?" pr r
+      in
+      if do_parens then fprintf fmt ")" ;
+      fprintf fmt "@]"
+    and pr_list (sep : string)
+                (level : Prio.t)
+                (fmt : formatter)
+                (l : t_ext list) : unit =
+      match l with
+      | [] -> assert false
+      | r :: [] -> pr level  fmt r
+      | r :: l ->
+        fprintf fmt "%a%s@ " (pr level) r sep ;
+        pr_list sep level  fmt l
+    in
+    fprintf fmt "@[[" ;
+    pr lowest fmt @@ flatten r ;
+    fprintf fmt "]@]"
 
 
   let get_rid_of_duplicate (comp : 'a -> 'a -> bool)
