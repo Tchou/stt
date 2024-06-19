@@ -1,3 +1,18 @@
+module type Letter = sig
+
+  type t
+
+  val compare : t -> t -> int
+
+  val pp : Format.formatter -> t -> unit
+
+  val epsilon : t
+  val is_epsilon : t -> bool
+
+  (* prio : t -> Prio.t *)
+  
+end
+
 module type S = sig
 
   type lt
@@ -21,7 +36,7 @@ module type S = sig
 
 end
 
-module Make (Lt : Letter.Letter) : S with type lt = Lt.t = struct
+module Make (Lt : Letter) : S with type lt = Lt.t = struct
 
   type lt = Lt.t
 

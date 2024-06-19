@@ -2,6 +2,8 @@ module type S = sig
 
   type lt
   (** The letter type *)
+  type state = private int
+  (** The state type *)
   type t
   (** The automaton type *)
 
@@ -10,45 +12,45 @@ module type S = sig
   type regexp
   (** The regexp type *)
 
-  val empty : t
-  (** The empty automaton *)
+  val create : unit -> t
+  (** [create ()] generates an empty automaton *)
 
-  val add_state : t -> int -> t
-  (** [add_state automaton state] adds [state] in [automaton]. 
-    If it's already a state in [automaton], does nothing *)
-  val add_states : t -> int list -> t
-  (** [add_states automaton states] adds several states in [automaton] *)
-  val add_trans : t -> int -> lt -> int -> t
-  (** [add_trans automaton state1 letter state2] adds a transition labelled [letter] between [state1] and [state2] in [automaton].
+  val mk_state : t -> state
+  (** [mk_state auto] generates and returns a fresh state, 
+    while setting it in [auto]. *)
+  val add_trans : t -> state -> lt -> state -> unit
+  (** [add_trans auto state1 letter state2] adds a transition labelled [letter]
+    between [state1] and [state2] in [auto].
+    If the transition is already in [auto], does nothing 
 
-    Raises : [state1] and [state2] must be [automaton]'s states.
-    Raises : [l] must be in the [automaton]'s alphabet.
-
-    If the transition is already in [automaton], does nothing *)
-  val add_transitions : t -> (int * lt * int) list -> t
-  (** [add_transitions automaton transitions] adds several transitions in [automaton] *)
-  val add_start : t -> int -> t
-  (** [add_start automaton state] sets [state] as a start state in [automaton].
+    Raises : [state1] and [state2] must be [auto]'s states. *)
+  val add_transitions : t -> (state * lt * state) list -> unit
+  (** [add_transitions auto transitions] adds several transitions in [auto] *)
+  val set_start : t -> state -> unit
+  (** [set_start auto state] sets [state] as a start state in [auto].
     If it's already the case, does nothing
 
-    Raise : [state] must be an [automaton]'s state *)
-  val add_starts : t -> int list -> t
-  (** [add_starts automaton states] sets several states as start states in [automaton] *)
-  val add_end : t -> int -> t
-  (** [add_end automaton state] sets [state] as an end state in [automaton].
+    Raise : [state] must be an [auto]'s state *)
+  val set_starts : t -> state list -> unit
+  (** [set_starts auto states] sets several states as start states in [auto] *)
+  val set_final : t -> state -> unit
+  (** [set_final auto state] sets [state] as an final state in [auto].
     If it's already the case, does nothing
 
-    Raise : [state] must be an [automaton]'s state *)
-  val add_ends : t -> int list -> t
-  (** [add_ends automaton states] sets several states as end states in [automaton] *)
+    Raise : [state] must be an [auto]'s state *)
+  val set_finals : t -> state list -> unit
+  (** [set_finals auto states] sets several states as final states in [auto] *)
 
   val check_word : t -> lt list -> bool
-  (** [check_word automaton word] checks if [word] is recognized by [automaton] *)
+  (** [check_word auto word] checks if [word] is recognized by [auto] *)
   val to_regex_my : t -> regexp
-  (** [to_regex_my automaton] returns the regex representing [automaton] using the McNaughton-Yamada method. 
+  (** [to_regex_my auto] returns the regex representing [auto] 
+    using the McNaughton-Yamada method. 
+
     The returned value might be unsimplified *)
+
 end
 
-module Make (Lt : Letter.Letter) : S with type lt = Lt.t 
+module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
                                      and module R = Regexp.Make(Lt) 
                                      and type regexp = Regexp.Make(Lt).t_simp

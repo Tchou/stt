@@ -1,21 +1,24 @@
+(* TODO : rendre mutable l'automate *)
+
 module type S = sig
 
   type lt
+  type state = private int
   type t
 
   module R : Regexp.S
   type regexp
 
-  val empty : t
+  val create : unit -> t
 
-  val add_state : t -> int -> t
-  val add_states : t -> int list -> t
-  val add_trans : t -> int -> lt-> int -> t
-  val add_transitions : t -> (int * lt * int) list -> t
-  val add_start : t -> int -> t
-  val add_starts : t -> int list -> t
-  val add_end : t -> int -> t
-  val add_ends : t -> int list -> t
+  val mk_state : t -> state
+
+  val add_trans : t -> state -> lt-> state -> unit
+  val add_transitions : t -> (state * lt * state) list -> unit
+  val set_start : t -> state -> unit
+  val set_starts : t -> state list -> unit
+  val set_final : t -> state -> unit
+  val set_finals : t -> state list -> unit
   
   val check_word : t -> lt list -> bool
 
@@ -23,7 +26,7 @@ module type S = sig
 
 end
 
-module Make (Lt : Letter.Letter) : S with type lt = Lt.t 
+module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
                                      and module R = Regexp.Make(Lt) 
                                      and type regexp = Regexp.Make(Lt).t_simp = struct
 
@@ -39,7 +42,7 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
     type t = trans
 
     let compare (state1, letter, state2 : t) 
-                (state1', letter', state2' : t) : int =
+                (state1', letter', state2' : t) : state =
       let c1 = compare state1 state1' in
       match c1 with
       | 0 ->
@@ -56,10 +59,11 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
   type transitions = TransSet.t
 
   type t = { 
-              states : states ; 
-              starts : states ; 
-              trans : transitions ; 
-              ends : states ;
+              mutable st_counter : state ;
+              mutable states : states ; 
+              mutable starts : states ; 
+              mutable trans : transitions ; 
+              mutable finals : states ;
            }
 
 
@@ -71,91 +75,63 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
   (* ================================================================= *)
   (* ================================================================= *)
 
-  let empty : t = { 
-                    states = StateSet.empty ; 
-                    starts = StateSet.empty ; 
-                    trans = TransSet.empty ;
-                    ends = StateSet.empty ; 
-                  }
+  let create (_ : unit) : t = { 
+                                st_counter = -1 ;
+                                states = StateSet.empty ; 
+                                starts = StateSet.empty ; 
+                                trans = TransSet.empty ;
+                                finals = StateSet.empty ; 
+                              }
 
 
 
-  let add_state (automaton : t) 
-                (state : state) : t =
-    { 
-      automaton with 
-        states = StateSet.add state automaton.states 
-    }
+  let mk_state (auto : t) : state =
+    auto.st_counter <- auto.st_counter + 1 ;
+    auto.states <- StateSet.add auto.st_counter auto.states ;
+    auto.st_counter
 
-  let add_states (automaton : t) 
-                 (states : state list) : t =
-    List.fold_left (
-      fun (acc : t) 
-          (state : state) : t ->
-        add_state acc state
-    ) 
-    automaton states
-
-  let add_trans (automaton : t) 
+  let add_trans (auto : t) 
                 (state1 : state) 
                 (letter : lt)
-                (state2 : state) : t =
-    if StateSet.mem state1 automaton.states && StateSet.mem state2 automaton.states then
-      { 
-        automaton with 
-          trans = TransSet.add (state1, letter, state2) automaton.trans 
-      }
+                (state2 : state) : unit =
+    if StateSet.mem state1 auto.states && StateSet.mem state2 auto.states then
+      auto.trans <- TransSet.add (state1, letter, state2) auto.trans
     else
-      failwith "both given states must be automaton's states"
+      failwith "[add_trans] both given states must be auto's states"
 
-  let add_transitions (automaton : t) 
-                      (transitions : trans list) : t =
-    List.fold_left (
-      fun (acc : t) 
-          (state1, letter, state2 : trans) : t -> 
-        add_trans acc state1 letter state2
+  let add_transitions (auto : t) 
+                      (transitions : trans list) : unit =
+    List.iter (
+      fun (state1, letter, state2 : trans) : unit -> 
+        add_trans auto state1 letter state2
     ) 
-    automaton transitions
+    transitions
 
-  let add_start (automaton : t) 
-                (state : state) : t =
-    match StateSet.find_opt state automaton.states with
-    | Some _ -> { 
-        automaton with 
-          starts = StateSet.add state automaton.starts 
-      }
-    | None -> failwith "given state must be an automaton's state"
+  let set_start (auto : t) 
+                (state : state) : unit =
+    if StateSet.mem state auto.states then
+      auto.starts <- StateSet.add state auto.starts
+    else
+      failwith "[set_start] given state must be an auto's state"
 
-  let add_starts (automaton : t) 
-                 (states : state list) : t =
-    List.fold_left (
-      fun (acc : t) 
-          (state : state) : t -> 
-        add_start acc state
-    ) 
-    automaton states
+  let set_starts (auto : t) 
+                 (states : state list) : unit =
+    List.iter (set_start auto) states
 
-  let add_end (automaton : t) 
-              (state : state) : t =
-    match StateSet.find_opt state automaton.states with
-    | Some _ -> { 
-        automaton with 
-          ends = StateSet.add state automaton.ends 
-      }
-    | None -> failwith "given state must be an automaton's state"
+  let set_final (auto : t) 
+                (state : state) : unit =
+    if StateSet.mem state auto.states then
+      auto.finals <- StateSet.add state auto.finals
+    else
+      failwith "[set_final] given state must be an auto's state"
 
-  let add_ends (automaton : t) 
-               (states : state list) : t =
-    List.fold_left (
-      fun (acc : t) 
-          (state : state) : t -> 
-        add_end acc state
-    ) 
-    automaton states
+  let set_finals (auto : t) 
+                 (states : state list) : unit =
+    List.iter (set_final auto) states
 
 
 
-  let check_word (automaton : t) 
+  let check_word (auto : t) 
                  (word : lt list) : bool =
     let end_states =
       List.fold_left (
@@ -172,57 +148,45 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
                     else
                       next_states_labeled_letter
                 )
-                automaton.trans StateSet.empty
+                auto.trans StateSet.empty
               in
               StateSet.union next_states next_states_for_s
           )
           current_states StateSet.empty 
       )
-      automaton.starts word
+      auto.starts word
     in
-    StateSet.exists (Fun.flip StateSet.mem @@ automaton.ends) end_states
+    StateSet.exists (Fun.flip StateSet.mem @@ auto.finals) end_states
 
 
 
-  let to_regex_my (automaton: t) : regexp =
-    (* States renaming *)
-    let memo = Hashtbl.create 16 in
-    let i = ref 1 in
-    let () = StateSet.iter (
-      fun (s : state) : unit ->
-        Hashtbl.add memo s !i ;
-        incr i 
-    )
-    automaton.states
+  let to_regex_my (auto: t) : regexp =
+    (* States renaming 
+
+       States are all from 0 to n
+       And we can't remove a state, so there is no "hole"
+
+       Therefore, we can just add 1 for all states
+    *)
+    let () = auto.states <- StateSet.map ((+) 1) auto.states in
+    let () = auto.starts <- StateSet.map ((+) 1) auto.starts in
+    let () = auto.finals <- StateSet.map ((+) 1) auto.finals in
+    let () = auto.trans <- TransSet.map (
+        fun (s1, l, s2 : trans) : trans -> s1 + 1, l, s2 + 1
+      ) 
+      auto.trans
     in
-    let replace_states (states : states) : states =
-      StateSet.map (
-        fun (s : state) : state ->
-          Hashtbl.find memo s
-      )
-      states
-    in
-    let states = replace_states automaton.states in
-    let starts = replace_states automaton.starts in
-    let ends = replace_states automaton.ends in
-    let trans = TransSet.map (
-      fun (s1, l, s2 : trans) : trans ->
-        (Hashtbl.find memo s1, l, Hashtbl.find memo s2)
-    )
-    automaton.trans
-    in
-    let automaton = { states ; starts ; ends ; trans } in
     (* McNaughton-Yamada algorithm *)
-    let n = StateSet.cardinal automaton.states in
+    let n = StateSet.cardinal auto.states in
     let get_transition_between (trans : transitions) 
                                (state1 : state)
                                (state2 : state) : transitions =
-    TransSet.filter (
-        fun (state1', _, state2') -> 
-          state1 = state1'
-          && state2 = state2'
-      ) 
-      trans
+      TransSet.filter (
+          fun (state1', _, state2') -> 
+            state1 = state1'
+            && state2 = state2'
+        ) 
+        trans
     in
     let mat1 = Array.init n (
       fun (i : state) : regexp array ->
@@ -230,7 +194,7 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
         let () = Array.mapi_inplace (
           fun (j : state) 
               (_ : regexp) : regexp ->
-            let transitions = get_transition_between automaton.trans (i+1) (j+1) in
+            let transitions = get_transition_between auto.trans (i+1) (j+1) in
             let regex = TransSet.fold (
               fun (_, l, _ : trans)
                   (acc : regexp) : regexp ->
@@ -261,37 +225,41 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
     in
     let mat2 = Array.make_matrix n n R.empty in
     let choose_mat = ref true in
+    let algo (k : int)
+             (p : int)
+             (q : int)
+             (mat : regexp array array)
+             (mat' : regexp array array) : unit =
+      mat'.(p).(q) <-
+        if R.is_empty mat.(p).(k) || R.is_empty mat.(k).(q) then
+          mat.(p).(q)
+        else if R.is_empty mat.(p).(q) then
+          if R.is_empty mat.(k).(k) then
+            R.letter Lt.epsilon
+          else
+            R.(
+                 concat mat.(p).(k) 
+              @@ concat (star mat.(k).(k)) mat.(k).(q)
+            )
+        else if k = p then
+          R.(concat (star mat.(p).(p)) mat.(p).(q))
+        else if k = q then
+          R.(
+               concat mat.(p).(q)
+            @@ star mat.(q).(q)
+          )
+        else
+          R.(
+               union mat.(p).(q) 
+            @@ concat mat.(p).(k) 
+            @@ concat (star mat.(k).(k)) mat.(k).(q)
+          )
+    in
     let () =
       for k = 0 to n-1 do
         for p = 0 to n-1 do
           for q = 0 to n-1 do
-            let algo (mat : regexp array array)
-                     (mat' : regexp array array) : unit =
-              mat'.(p).(q) <-
-                if R.is_empty mat.(p).(k) || R.is_empty mat.(k).(q) then
-                  mat.(p).(q)
-                else if R.is_empty mat.(p).(q) then
-                  if R.is_empty mat.(k).(k) then
-                    R.letter Lt.epsilon
-                  else
-                    R.(
-                         concat mat.(p).(k) 
-                      @@ concat (star mat.(k).(k)) mat.(k).(q)
-                    )
-                else if k = p then
-                  R.(concat (star mat.(p).(p)) mat.(p).(q))
-                else if k = q then
-                  R.(
-                       concat mat.(p).(q)
-                    @@ star mat.(q).(q)
-                  )
-                else
-                  R.(
-                       union mat.(p).(q) 
-                    @@ concat mat.(p).(k) 
-                    @@ concat (star mat.(k).(k)) mat.(k).(q)
-                  )
-            in
+            let algo = algo k p q in
             (* instead of doing copies, i read and write alternately in two matrixes *)
             if !choose_mat then
               algo mat1 mat2
@@ -344,8 +312,8 @@ module Make (Lt : Letter.Letter) : S with type lt = Lt.t
                   )
                 )
         )
-        automaton.ends acc
+        auto.finals acc
     )
-    automaton.starts R.empty
+    auto.starts R.empty
 
 end

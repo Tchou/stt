@@ -235,6 +235,18 @@ let pr_basic (type a) (module M : Typ.Basic with type Leaf.t = a)
     in
     t :: acc
 
+let pr_enum t acc =
+  let open Typ in
+  let l = get_leaf (module VarEnum) t in
+  let t, acc = 
+    if subtype Builtins.bool t && Enum.is_finite l then
+      diff t Builtins.bool, (mk Builtins.bool @@ str_descr "Bool") :: acc
+    else
+      t, acc
+  in
+  pr_basic (module VarEnum) (module Enum) t acc
+
+
 let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
 
 let decompile t =
@@ -254,6 +266,8 @@ let decompile t =
         descr = Printer (fun (_ : formatter) -> ()) 
       } 
       let is_epsilon (t : t) = Typ.is_empty t.typ
+
+      (* let prio t = level t.descr *)
 
     end
   in
@@ -336,7 +350,7 @@ let decompile t =
           in
           cup (diff t ts) ts', acc
     in
-    let acc = pr_basic (module VarEnum) (module Enum) t acc in
+    let acc = pr_enum t acc in (* handles the Bool case *)
     let acc = pr_basic (module VarInt) (module Int) t acc in
     let acc = pr_basic (module VarChar) (module Char) t acc in
     let acc = pr_basic (module VarUnit) (module Unit) t acc in
@@ -354,65 +368,58 @@ let decompile t =
     in
     acc
   and pr_regexp (t : Typ.t) : Typ.t * t option =
-    let state =
-      let s = ref ~-1 in
-      fun (_ : unit) : int -> 
-        incr s ; !s
-    in
-    let init = state () in
-    let finals = ref [] in
-    let states = ref [(t, init)] in
-    let trans = ref [] in
-    let rec loop (t : Typ.t) 
-                 (q : int) : unit =
-      if Typ.subtype Builtins.nil t then
-        finals := q :: !finals ;
-      let vp, vn = Typ.toplevel_vars t in
-      if not Var.Set.(is_empty vp && is_empty vn) then
-        raise Exit ;
-      states := (t, q) :: !states ;
-      let prod =
-        Typ.VarProduct.(full_dnf (get t))
-               |> Seq.map (fun ((vp, vn), (pl, nl)) ->
-                   match vp, vn with
-                   | [], [] -> (List.map extract pl,
-                    List.map extract nl)
-                   | _ -> raise Exit (* toplevel variables *)
-                 )
-      in
-      let norm = Normal.normal prod in
-      let todo = 
-        norm |>
-        List.fold_left (
-          fun (acc : (Typ.t * int) list)
-              (li, ri : Typ.t * Typ.t) : (Typ.t * int) list ->
-            let q', acc = (
-              match List.find_opt (
-                  fun (t, _ : Typ.t * int) : bool -> 
-                    Typ.equiv ri t
-                ) 
-                @@ !states @ acc 
-              with
-              | None -> 
-                let q' = state () in
-                q', (ri, q') :: acc
-              | Some (_, q') -> q', acc
-            )
-            in
-            let () = trans := (q, pr_descr li, q') :: !trans in
-            acc
-        )
-        []
-      in
-      List.iter (fun (ri, q') -> loop ri q') todo
-    in
     try
-      let () = loop t init in
       let open Automaton in
-      let auto = add_states empty @@ List.map snd !states in
-      let auto = add_start auto init in
-      let auto = add_ends auto !finals in
-      let auto = add_transitions auto !trans in
+      let auto = create () in
+      let memo = Hashtbl.create 16 in
+      let rec loop (t : Typ.t) 
+                   (q : state) : unit =
+        let () =
+          if Typ.subtype Builtins.nil t then
+            set_final auto q ;
+          let vp, vn = Typ.toplevel_vars t in
+          if not Var.Set.(is_empty vp && is_empty vn) then
+            raise Exit ;
+        in
+        let prod = Typ.VarProduct.(full_dnf @@ get t) in
+        let prod = Seq.map (
+          fun ((vp, vn), (pl, nl)) ->
+            match vp, vn with
+            | [], [] -> (
+              List.map extract pl,
+              List.map extract nl
+            )
+            | _ -> raise Exit (* toplevel variables *)
+          )
+          prod
+        in
+        let todo = 
+          Normal.normal prod |>
+          List.fold_left (
+            fun (acc : (Typ.t * state) list)
+                (li, ri : Typ.t * Typ.t) : (Typ.t * state) list ->
+              let q', acc = (
+                match Hashtbl.find_opt memo ri with
+                | None ->
+                  let q' = mk_state auto in
+                  let () = Hashtbl.add memo ri q' in
+                  q', (ri, q') :: acc
+                | Some q' -> q', acc
+              )
+              in
+              let () = add_trans auto q (pr_descr li) q' in
+              acc
+          )
+          []
+        in
+        List.iter (fun (ri, q') -> loop ri q') todo
+      in
+      let init = mk_state auto in
+      let () =
+        Hashtbl.add memo t init ;
+        loop t init ;
+        set_start auto init ;
+      in
       let regexp = Regexp.(simplify
         @@ simp_to_ext
         @@ to_regex_my auto

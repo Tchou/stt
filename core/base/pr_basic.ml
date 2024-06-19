@@ -1,14 +1,11 @@
 open Format
 
 type pr = formatter -> unit
-
 type single =
   | Singleton of pr
   | Range of pr * pr
 
-type 'a t = bool (* [true] if it's a diff like Enum\{`A|...}, 
-                    [false] otherwise like `A|`B *)
-            * ('a * single) list
+type 'a t = bool * ('a * single) list
 
 let pr_string (s : string)
               (fmt : formatter) : unit =
