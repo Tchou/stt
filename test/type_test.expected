@@ -71,20 +71,20 @@ Test: 'Char' (3/3)
       Serie: 'Char.union': (5/5)
              
              'Char.union.1': PASSED
-                 expected: (false, A--Z)
-                   result: (false, A--Z)
+                 expected: (false, 'A'--'Z')
+                   result: (false, 'A'--'Z')
              'Char.union.2': PASSED
-                 expected: (false, A--Z)
-                   result: (false, A--Z)
+                 expected: (false, 'A'--'Z')
+                   result: (false, 'A'--'Z')
              'Char.union.3': PASSED
-                 expected: (false, A--E)
-                   result: (false, A--E)
+                 expected: (false, 'A'--'E')
+                   result: (false, 'A'--'E')
              'Char.union.4': PASSED
                  expected: Char
                    result: Char
              'Char.union.5': PASSED
-                 expected: (false, A--Ĭ, Ş--Ɛ, ƒ--΄)
-                   result: (false, A--Ĭ, Ş--Ɛ, ƒ--΄)
+                 expected: (false, 'A'--'Ĭ', 'Ş'--'Ɛ', 'ƒ'--'΄')
+                   result: (false, 'A'--'Ĭ', 'Ş'--'Ɛ', 'ƒ'--'΄')
              
       
       Serie: 'Char.inter': (5/5)
@@ -93,17 +93,17 @@ Test: 'Char' (3/3)
                  expected: Empty
                    result: Empty
              'Char.inter.2': PASSED
-                 expected: (false, D--G)
-                   result: (false, D--G)
+                 expected: (false, 'D'--'G')
+                   result: (false, 'D'--'G')
              'Char.inter.3': PASSED
-                 expected: (false, A, E)
-                   result: (false, A, E)
+                 expected: (false, 'A', 'E')
+                   result: (false, 'A', 'E')
              'Char.inter.4': PASSED
                  expected: Char
                    result: Char
              'Char.inter.5': PASSED
-                 expected: (false, F--d, ÿ, ǂ--̠)
-                   result: (false, F--d, ÿ, ǂ--̠)
+                 expected: (false, 'F'--'d', 'ÿ', 'ǂ'--'̠')
+                   result: (false, 'F'--'d', 'ÿ', 'ǂ'--'̠')
              
       
       Serie: 'Char.diff': (6/6)
@@ -118,14 +118,14 @@ Test: 'Char' (3/3)
                  expected: Empty
                    result: Empty
              'Char.diff.4': PASSED
-                 expected: (false, \u{0000}--@, [--\u{10ffff})
-                   result: (false, \u{0000}--@, [--\u{10ffff})
+                 expected: (false, '\u{0000}'--'@', '['--'\u{10ffff}')
+                   result: (false, '\u{0000}'--'@', '['--'\u{10ffff}')
              'Char.diff.5': PASSED
-                 expected: (false, A--E, Ā--Ĭ, ̡--΄)
-                   result: (false, A--E, Ā--Ĭ, ̡--΄)
+                 expected: (false, 'A'--'E', 'Ā'--'Ĭ', '̡'--'΄')
+                   result: (false, 'A'--'E', 'Ā'--'Ĭ', '̡'--'΄')
              'Char.diff.6': PASSED
-                 expected: (false, e--þ, Ş--Ɛ, ƒ--ǁ)
-                   result: (false, e--þ, Ş--Ɛ, ƒ--ǁ)
+                 expected: (false, 'e'--'þ', 'Ş'--'Ɛ', 'ƒ'--'ǁ')
+                   result: (false, 'e'--'þ', 'Ş'--'Ɛ', 'ƒ'--'ǁ')
              
       
       
