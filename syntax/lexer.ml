@@ -94,6 +94,7 @@ let rec lexer lexbuf =
 
 
   (* Symbols *)
+  | "-" -> MINUS
   | "->" -> MINUSGT
   | "--" -> MINUSMINUS
   | "("  -> LP
