@@ -1,0 +1,5 @@
+(test
+ (name type_test)
+ (modules :standard)
+ (libraries stt zarith test_utils)
+ (empty_module_interface_if_absent))

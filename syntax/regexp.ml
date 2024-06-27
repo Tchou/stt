@@ -191,7 +191,7 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
       match r1, r2 with
       | Letter lt1, Letter lt2 -> 0 = Lt.compare lt1 lt2
       | Concat l1, Concat l2
-      | Union l1, Union l2 -> List.equal compare l1 l2
+      | Union l1, Union l2 -> (try List.for_all2 compare l1 l2 with _ -> false)
       | Star r1, Star r2
       | Plus r1, Plus r2
       | Option r1, Option r2 -> compare r1 r2

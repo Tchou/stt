@@ -1,0 +1,4 @@
+(test
+ (name syntax_test)
+ (libraries stt stt.syntax sedlex test_utils)
+ (empty_module_interface_if_absent))

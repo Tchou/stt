@@ -5,4 +5,4 @@ include Int_test
 include Unit_test
 include Var_test
 
-let () = Utils.summary "global"
+let () = Test_utils.summary "global"

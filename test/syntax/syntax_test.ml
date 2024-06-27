@@ -1,4 +1,4 @@
 include Pp_test
 include Regexp_test
 
-let () = Utils.summary "syntax"
+let () = Test_utils.summary "syntax"
