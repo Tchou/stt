@@ -15,7 +15,7 @@ val make : ?kind:kind -> string -> t
 val dump : Format.formatter -> t -> unit
 
 module Set : sig
-  include Stdlib.Set.S with type elt = t 
+  include Stdlib.Set.S with type elt = t
   include Base.Common.T with type t := t
 end
 

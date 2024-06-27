@@ -17,7 +17,7 @@ and t = {
   descr : t_descr
 }
 
-let level t = 
+let level t =
   match t with
   | Printer _ -> Prio.pr_printer
   | Pair _  -> Prio.pr_pair
@@ -71,11 +71,11 @@ and pr_defs ppf l =
 
 let mk typ descr = { typ ; descr }
 
-let var v = 
+let var v =
   let typ = Typ.var v in
   mk typ @@ Printer (dprintf "%a" Var.pp v)
 
-let name_descr v = 
+let name_descr v =
   Printer (dprintf "%s" Name.(!!v))
 let str_descr v =
   Printer (dprintf "%s" v)
@@ -163,18 +163,18 @@ let is_any t = Typ.(subtype any t)
 let pcap l = match l with
     [] -> assert false
   | [ t ] -> t
-  | _ -> 
+  | _ ->
     let typ = List.fold_left (fun acc t -> Typ.cap t.typ acc) Typ.any l in
     mk typ (Cap l)
 
 let pcup l = match l with
   | [] -> empty_
   | [ t ] -> t
-  | _ -> 
+  | _ ->
     let typ = List.fold_left (fun acc t -> Typ.cup t.typ acc) Typ.empty l in
     mk typ (Cup l)
 
-let neg t = 
+let neg t =
   mk (Typ.neg t.typ) @@ Neg t
 let prod t1 t2 =
   mk Typ.(product (node t1.typ) @@ node t2.typ) @@ Pair (t1, t2)
@@ -205,12 +205,12 @@ let get_leaf (type t) (module M : Typ.Basic with type Leaf.t = t) t =
   | Seq.Cons((([], []), l), _ ) -> l
   | _ -> assert false
 
-let pr_basic (type a) (module M : Typ.Basic with type Leaf.t = a) 
+let pr_basic (type a) (module M : Typ.Basic with type Leaf.t = a)
              (module E : Base.Sigs.Printable with type t = a) t acc =
   let l = get_leaf (module M) t in
-  if M.Leaf.is_empty l then 
-    acc 
-  else if M.Leaf.is_any l then 
+  if M.Leaf.is_empty l then
+    acc
+  else if M.Leaf.is_any l then
     M.(mk (set (get t) Typ.empty) @@ str_descr Leaf.name) :: acc
   else
     let open Base in
@@ -232,7 +232,7 @@ let pr_basic (type a) (module M : Typ.Basic with type Leaf.t = a)
 let pr_enum t acc =
   let open Typ in
   let l = get_leaf (module VarEnum) t in
-  let t, acc = 
+  let t, acc =
     if subtype Builtins.bool t && Enum.is_finite l then
       diff t Builtins.bool, (mk Builtins.bool @@ str_descr "Bool") :: acc
     else
@@ -255,10 +255,10 @@ let decompile t =
       let pp (fmt : Format.formatter)
              (t : t) : unit = pr Prio.lowest fmt t.descr
 
-      let epsilon = { 
-        typ = Typ.empty ; 
-        descr = Printer (fun (_ : formatter) -> ()) 
-      } 
+      let epsilon = {
+        typ = Typ.empty ;
+        descr = Printer (fun (_ : formatter) -> ())
+      }
       let is_epsilon (t : t) = Typ.is_empty t.typ
 
       let prio t = level t.descr
@@ -340,7 +340,7 @@ let decompile t =
             match re with
             | None -> acc
             | Some re -> re :: acc
-          ) 
+          )
           in
           cup (diff t ts) ts', acc
     in
@@ -366,7 +366,7 @@ let decompile t =
       let open Automaton in
       let auto = create () in
       let memo = Hashtbl.create 16 in
-      let rec loop (t : Typ.t) 
+      let rec loop (t : Typ.t)
                    (q : state) : unit =
         let () =
           if Typ.subtype Builtins.nil t then
@@ -387,7 +387,7 @@ let decompile t =
           )
           prod
         in
-        let todo = 
+        let todo =
           Normal.normal prod |>
           List.fold_left (
             fun (acc : (Typ.t * state) list)
@@ -420,9 +420,9 @@ let decompile t =
       )
       in
       let printer fmt =
-        let pp_lt = 
-          fun (fmt : formatter) 
-              (lt : lt) : unit -> 
+        let pp_lt =
+          fun (fmt : formatter)
+              (lt : lt) : unit ->
             pr Prio.lowest fmt lt.descr
         in
         Regexp.pp fmt pp_lt regexp
@@ -451,19 +451,19 @@ let decompile t =
       | (n1, n2) :: ll ->
         let n1, n2 = List.fold_left (fun (t1, t2) (n1, n2) ->
             (cap t1 (descr n1), cap t2 (descr n2))) (descr n1, descr n2) ll
-        in 
+        in
         prod (pr_descr n1) @@ pr_descr n2
     in
-    let negp = List.map (fun (n1, n2) -> prod (pr_node n1) @@ pr_node n2) negp 
+    let negp = List.map (fun (n1, n2) -> prod (pr_node n1) @@ pr_node n2) negp
     in
-    let res = 
+    let res =
       match negp with
         [] -> posp
       | l -> diff posp @@ pcup l
     in res :: acc
   and pr_arrow_line acc ((posa, nega),_) =
     (*Format.eprintf "IN ARROW LINE\n%!"; *)
-    let arrow (n1, n2) = 
+    let arrow (n1, n2) =
       let t = Typ.arrow n1 n2 in
       mk t @@ Arrow (pr_node n1, pr_node n2)
     in

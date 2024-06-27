@@ -56,7 +56,7 @@ module type Set = sig
 end
 
 module type Printable = sig
-  
+
   type t
 
   val export : t -> t Pr_basic.t
@@ -88,10 +88,10 @@ module type FiniteCofinite = sig
   (** [is_finite s] is [true] if and only if [s] is finite. *)
 end
 
-(* 
+(*
 
 module type Printable = sig
-  
+
   type t
 
   val export : t -> t Basic_printer.t

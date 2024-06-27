@@ -7,7 +7,7 @@ type single =
 (** The atomic printer type *)
 
 type 'a t = bool * ('a * single) list
-(** The type in order to print union 
+(** The type in order to print union
 
     The boolean specifies if it's a diff or not
     We keep the 'a with its associated single printer*)
@@ -15,7 +15,7 @@ type 'a t = bool * ('a * single) list
 val pr_string : string -> formatter -> unit
 (** [pr_string s fmt] prints the string [s] in [fmt] *)
 
-val pp_single : formatter -> single -> unit 
+val pp_single : formatter -> single -> unit
 (** [pp_single fmt s] prints the single [s] in [fmt] *)
 
 val pp : ?pp_any:(formatter -> unit) -> ?pp_empty:(formatter -> unit)

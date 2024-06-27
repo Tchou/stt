@@ -24,7 +24,7 @@ let pp ?(pp_any : formatter -> unit = pr_string "Any")
   match t with
   | false, [] -> pp_empty fmt
   | true, [] -> pp_any fmt
-  | b, l -> fprintf fmt "@[(%b, %a)@]" b (pp_print_list 
+  | b, l -> fprintf fmt "@[(%b, %a)@]" b (pp_print_list
       ~pp_sep:(fun ppf () -> fprintf ppf ",@ ")
       (fun fmt (_, s) -> fprintf fmt "@[%a@]" pp_single s)
     ) l

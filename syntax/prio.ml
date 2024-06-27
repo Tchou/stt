@@ -14,7 +14,7 @@ let pr_rec : t = 1
 
 let re_star : t = 5
 let re_plus : t = 5
-let re_option : t = 5 
+let re_option : t = 5
 let re_concat : t = 4
 let re_union : t = 3
 

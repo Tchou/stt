@@ -5,7 +5,7 @@ Assume a type
 (X, (X, [])) where X = (X, []) | ([], [])
 ```
 You can enter this type in CDuce which simplifies to `[[X] [X]] where X = [X?]`
-(binary trees of `[]`). Such a type can be built with the 
+(binary trees of `[]`). Such a type can be built with the
 ```
 t where X = ... and Y = ...
 ```
@@ -15,7 +15,7 @@ sub-typing must work correctly for it. Such types may also arise as the result
 of instanciation, or applications of boolean connectives on other "more natural"
 types.
 
-We want to show it is not empty (e.g. an inhabitant of that type is: 
+We want to show it is not empty (e.g. an inhabitant of that type is:
 `[ [[]] [[]] ]`), so we explore it's structure until we can prove the type
 to be non empty. In what follows, "assume a type is empty" means record it as
 empty in the memoization table.

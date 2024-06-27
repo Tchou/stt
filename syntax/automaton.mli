@@ -16,12 +16,12 @@ module type S = sig
   (** [create ()] generates an empty automaton *)
 
   val mk_state : t -> state
-  (** [mk_state auto] generates and returns a fresh state, 
+  (** [mk_state auto] generates and returns a fresh state,
     while setting it in [auto]. *)
   val add_trans : t -> state -> lt -> state -> unit
   (** [add_trans auto state1 letter state2] adds a transition labelled [letter]
     between [state1] and [state2] in [auto].
-    If the transition is already in [auto], does nothing 
+    If the transition is already in [auto], does nothing
 
     Raises : [state1] and [state2] must be [auto]'s states. *)
   val add_transitions : t -> (state * lt * state) list -> unit
@@ -44,13 +44,13 @@ module type S = sig
   val check_word : t -> lt list -> bool
   (** [check_word auto word] checks if [word] is recognized by [auto] *)
   val to_regex_my : t -> regexp
-  (** [to_regex_my auto] returns the regex representing [auto] 
-    using the McNaughton-Yamada method. 
+  (** [to_regex_my auto] returns the regex representing [auto]
+    using the McNaughton-Yamada method.
 
     The returned value might be unsimplified *)
 
 end
 
 module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
-                                     and module R = Regexp.Make(Lt) 
+                                     and module R = Regexp.Make(Lt)
                                      and type regexp = Regexp.Make(Lt).t_simp

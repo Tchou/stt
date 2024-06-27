@@ -12,7 +12,7 @@ module type Letter = sig
   val is_epsilon : t -> bool
 
   val prio : t -> Prio.t
-  
+
 end
 
 module type S = sig
@@ -32,7 +32,7 @@ module type S = sig
 
   val simp_to_ext : t_simp -> t_ext
 
-  val pp : Format.formatter -> 
+  val pp : Format.formatter ->
     (Format.formatter -> lt -> unit) -> t_ext -> unit
 
   val simplify : t_ext -> t_ext
@@ -69,17 +69,17 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
   let letter (l : lt) : t_simp =
     S_Letter l
 
-  let concat (r1 : t_simp) 
+  let concat (r1 : t_simp)
              (r2 : t_simp) : t_simp =
     S_Concat (r1, r2)
 
-  let union (r1 : t_simp) 
+  let union (r1 : t_simp)
             (r2 : t_simp) : t_simp =
     S_Union (r1, r2)
 
   let star (r : t_simp) : t_simp =
     S_Star r
- 
+
 
 
   let rec simp_to_ext (r : t_simp) : t_ext =
@@ -94,7 +94,7 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
 
   let rec flatten_aux (f : t_ext -> t_ext list option)
                       (l : t_ext list) : t_ext list =
-    let flatten_aux' = flatten_aux f in           
+    let flatten_aux' = flatten_aux f in
     match l with
     | [] -> []
     | r :: l -> (
@@ -106,7 +106,7 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
     match r with
     | Letter _ -> r
     | Concat l ->
-      let f = 
+      let f =
         fun (r : t_ext) : t_ext list option ->
           match r with
           | Concat l -> Some l
@@ -114,7 +114,7 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
       in
       Concat (flatten_aux f @@ List.map flatten l)
     | Union l ->
-      let f = 
+      let f =
         fun (r : t_ext) : t_ext list option ->
           match r with
           | Union l -> Some l
@@ -151,8 +151,8 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
         | Letter lt -> fprintf fmt "%a" pp_lt lt
         | Concat l -> fprintf fmt "@[%a@]" (pr_list ";" level) l
         | Union l -> fprintf fmt "@[%a@]" (pr_list " |" level) l
-        | Star r -> fprintf fmt "%a*" pr r 
-        | Plus r -> fprintf fmt "%a+" pr r 
+        | Star r -> fprintf fmt "%a*" pr r
+        | Plus r -> fprintf fmt "%a+" pr r
         | Option r -> fprintf fmt "%a?" pr r
       in
       if do_parens then fprintf fmt ")" ;
@@ -244,11 +244,11 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
             | _ ->
               List.cons r1 @@ loop @@ r2 :: l
         in
-        ( 
+        (
           match loop l with
           | [] -> Letter Lt.epsilon
           | r :: [] -> r
-          | l -> Concat l 
+          | l -> Concat l
         )
       | Union l ->
         let unique_l = get_rid_of_duplicate compare @@ List.map simp l
@@ -260,10 +260,10 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
           | _ -> (
             let (all_eps, without_eps) = List.partition (
               fun (r : t_ext) : bool ->
-                match r with 
-                | Letter lt -> Lt.is_epsilon lt 
+                match r with
+                | Letter lt -> Lt.is_epsilon lt
                 | _ -> false
-            ) 
+            )
             unique_l
             in
 
@@ -284,8 +284,8 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
               | Concat l -> (
                 match l with
                 | [] -> None, None
-                | r :: [] -> Some r, None 
-                | r' :: next -> 
+                | r :: [] -> Some r, None
+                | r' :: next ->
                   let (suff, before) = calc_suffix @@ Concat next in
                   match before with
                   | None -> suff, Some r'
@@ -294,10 +294,10 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
               | Plus r -> Some (Star r), Some r
               | _ -> Some r, None
             in
-            (* Factorize 
+            (* Factorize
 
                 The boolean tells us if we can simplify the result, i.e
-                  it has been factorized, thus changed (it prevents 
+                  it has been factorized, thus changed (it prevents
                   looping infinitely when simplifying the new expression)
             *)
             let factorize (r : t_ext) : t_ext * bool =
@@ -337,14 +337,14 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
                         )
                         all_left ;
                         match !max_factor with
-                        | None -> max_factor := Some factor    
-                        | Some old_factor -> 
+                        | None -> max_factor := Some factor
+                        | Some old_factor ->
                           max_factor := Some (concat_factors old_factor factor)
                       )
                       | None :: [] (* No factor found *)
                       | _ -> factor_not_found := false (* More than one factor *)
                     done
-                  in 
+                  in
                   (
                     match !max_factor with
                     | None -> r, false
@@ -378,18 +378,18 @@ module Make (Lt : Letter) : S with type lt = Lt.t = struct
               in
               r, is_factorized || is_factorized'
             in
-            match all_eps with 
+            match all_eps with
             | [] -> (* no epsilon *)
               let res, is_factorized = factorize @@ Union without_eps in
               if is_factorized then (* else it will loop without an end *)
                 flatten @@ simp res
-              else 
+              else
                 res
             | _ -> (* at least one (singleton because we got rid of duplicates) *)
               match without_eps with
               | [] -> Letter Lt.epsilon (* it was an union of espilon (why not) *)
               | r :: [] -> simp @@ Option r
-              | _ -> 
+              | _ ->
                 let res, is_factorized = factorize @@ Union without_eps in
                 if is_factorized then
                   simp @@ Option (flatten @@ res)

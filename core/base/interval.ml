@@ -114,7 +114,7 @@ module Make (X : V) = struct
             (singleton a, Pr_basic.Singleton (f a)) :: acc
           else
             (range a b, Pr_basic.Range (f a, f b)) :: acc
-      ) 
+      )
       t []
       in
       false, l

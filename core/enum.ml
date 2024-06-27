@@ -11,7 +11,7 @@ include FiniteCofinite.Make (H)
 
 let name = "Enum"
 
-(* 
+(*
     TODO : print "Bool" instead of "`true | `false"
 
 let export s =

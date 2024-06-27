@@ -1,9 +1,9 @@
 exception Except of string
 
-let parse_type ?(debug : bool = false) 
+let parse_type ?(debug : bool = false)
                 (s : string) : Stt.Typ.t =
   let lexbuf = Sedlexing.Utf8.from_string s in
-  let fmt = 
+  let fmt =
     if debug then
       Some(Format.err_formatter)
     else

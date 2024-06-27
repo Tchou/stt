@@ -83,17 +83,17 @@ end = struct
     else if is_empty t then
       false, []
     else
-      let f (s : S.t) : (t * Pr_basic.single) list = 
+      let f (s : S.t) : (t * Pr_basic.single) list =
         S.fold (
           fun (x : X.t)
-              (acc : (t * Pr_basic.single) list) : (t * Pr_basic.single) list ->
+            (acc : (t * Pr_basic.single) list) : (t * Pr_basic.single) list ->
             let f =
               fun (fmt : Format.formatter) : unit ->
                 Format.fprintf fmt "%a" X.pp x
             in
             (singleton x, Pr_basic.Singleton f) :: acc
-        ) 
-        s []
+        )
+          s []
       in
       match t with
       | `Finite s -> false, f s

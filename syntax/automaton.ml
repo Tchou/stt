@@ -19,7 +19,7 @@ module type S = sig
   val set_starts : t -> state list -> unit
   val set_final : t -> state -> unit
   val set_finals : t -> state list -> unit
-  
+
   val check_word : t -> lt list -> bool
 
   val to_regex_my : t -> regexp
@@ -27,7 +27,7 @@ module type S = sig
 end
 
 module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
-                                     and module R = Regexp.Make(Lt) 
+                                     and module R = Regexp.Make(Lt)
                                      and type regexp = Regexp.Make(Lt).t_simp = struct
 
   type lt = Lt.t
@@ -41,7 +41,7 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
 
     type t = trans
 
-    let compare (state1, letter, state2 : t) 
+    let compare (state1, letter, state2 : t)
                 (state1', letter', state2' : t) : state =
       let c1 = compare state1 state1' in
       match c1 with
@@ -58,11 +58,11 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
   module TransSet = Set.Make(Trans)
   type transitions = TransSet.t
 
-  type t = { 
+  type t = {
               mutable st_counter : state ;
-              mutable states : states ; 
-              mutable starts : states ; 
-              mutable trans : transitions ; 
+              mutable states : states ;
+              mutable starts : states ;
+              mutable trans : transitions ;
               mutable finals : states ;
            }
 
@@ -75,12 +75,12 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
   (* ================================================================= *)
   (* ================================================================= *)
 
-  let create (_ : unit) : t = { 
+  let create (_ : unit) : t = {
                                 st_counter = -1 ;
-                                states = StateSet.empty ; 
-                                starts = StateSet.empty ; 
+                                states = StateSet.empty ;
+                                starts = StateSet.empty ;
                                 trans = TransSet.empty ;
-                                finals = StateSet.empty ; 
+                                finals = StateSet.empty ;
                               }
 
 
@@ -90,8 +90,8 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
     auto.states <- StateSet.add auto.st_counter auto.states ;
     auto.st_counter
 
-  let add_trans (auto : t) 
-                (state1 : state) 
+  let add_trans (auto : t)
+                (state1 : state)
                 (letter : lt)
                 (state2 : state) : unit =
     if StateSet.mem state1 auto.states && StateSet.mem state2 auto.states then
@@ -99,43 +99,43 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
     else
       failwith "[add_trans] both given states must be auto's states"
 
-  let add_transitions (auto : t) 
+  let add_transitions (auto : t)
                       (transitions : trans list) : unit =
     List.iter (
-      fun (state1, letter, state2 : trans) : unit -> 
+      fun (state1, letter, state2 : trans) : unit ->
         add_trans auto state1 letter state2
-    ) 
+    )
     transitions
 
-  let set_start (auto : t) 
+  let set_start (auto : t)
                 (state : state) : unit =
     if StateSet.mem state auto.states then
       auto.starts <- StateSet.add state auto.starts
     else
       failwith "[set_start] given state must be an auto's state"
 
-  let set_starts (auto : t) 
+  let set_starts (auto : t)
                  (states : state list) : unit =
     List.iter (set_start auto) states
 
-  let set_final (auto : t) 
+  let set_final (auto : t)
                 (state : state) : unit =
     if StateSet.mem state auto.states then
       auto.finals <- StateSet.add state auto.finals
     else
       failwith "[set_final] given state must be an auto's state"
 
-  let set_finals (auto : t) 
+  let set_finals (auto : t)
                  (states : state list) : unit =
     List.iter (set_final auto) states
 
 
 
-  let check_word (auto : t) 
+  let check_word (auto : t)
                  (word : lt list) : bool =
     let end_states =
       List.fold_left (
-        fun (current_states : states) 
+        fun (current_states : states)
             (letter : lt) : states ->
           StateSet.fold (
             fun (s : state)
@@ -152,14 +152,14 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
               in
               StateSet.union next_states next_states_for_s
           )
-          current_states StateSet.empty 
+          current_states StateSet.empty
       )
       auto.starts word
     in
     StateSet.exists (Fun.flip StateSet.mem @@ auto.finals) end_states
 
   let to_regex_my (auto: t) : regexp =
-    (* States renaming 
+    (* States renaming
 
        States are all from 0 to n
        And we can't remove a state, so there is no "hole"
@@ -171,19 +171,19 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
     let () = auto.finals <- StateSet.map ((+) 1) auto.finals in
     let () = auto.trans <- TransSet.map (
         fun (s1, l, s2 : trans) : trans -> s1 + 1, l, s2 + 1
-      ) 
+      )
       auto.trans
     in
     (* McNaughton-Yamada algorithm *)
     let n = StateSet.cardinal auto.states in
-    let get_transition_between (trans : transitions) 
+    let get_transition_between (trans : transitions)
                                (state1 : state)
                                (state2 : state) : transitions =
       TransSet.filter (
-          fun (state1', _, state2') -> 
+          fun (state1', _, state2') ->
             state1 = state1'
             && state2 = state2'
-        ) 
+        )
         trans
     in
     let mat1 = Array.init n (
@@ -231,7 +231,7 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
             R.letter Lt.epsilon
           else
             R.(
-                 concat mat.(p).(k) 
+                 concat mat.(p).(k)
               @@ concat (star mat.(k).(k)) mat.(k).(q)
             )
         else if k = p then
@@ -243,8 +243,8 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
           )
         else
           R.(
-               union mat.(p).(q) 
-            @@ concat mat.(p).(k) 
+               union mat.(p).(q)
+            @@ concat mat.(p).(k)
             @@ concat (star mat.(k).(k)) mat.(k).(q)
           )
     in
@@ -273,34 +273,34 @@ module Make (Lt : Regexp.Letter) : S with type lt = Lt.t
               if start_state = end_state then
                 R.(
                     union (letter Lt.epsilon) (
-                    if !choose_mat then 
-                      mat1.(start_state-1).(end_state-1) 
-                    else 
+                    if !choose_mat then
+                      mat1.(start_state-1).(end_state-1)
+                    else
                       mat2.(start_state-1).(end_state-1)
                   )
                 )
               else
-                if !choose_mat then 
-                  mat1.(start_state-1).(end_state-1) 
-                else 
+                if !choose_mat then
+                  mat1.(start_state-1).(end_state-1)
+                else
                   mat2.(start_state-1).(end_state-1)
             else
               if start_state = end_state then
                 R.(
-                     union acc' 
+                     union acc'
                   @@ union (letter Lt.epsilon) (
-                    if !choose_mat then 
-                      mat1.(start_state-1).(end_state-1) 
-                    else 
+                    if !choose_mat then
+                      mat1.(start_state-1).(end_state-1)
+                    else
                       mat2.(start_state-1).(end_state-1)
                   )
                 )
               else
                 R.(
                     union acc' (
-                    if !choose_mat then 
-                      mat1.(start_state-1).(end_state-1) 
-                    else 
+                    if !choose_mat then
+                      mat1.(start_state-1).(end_state-1)
+                    else
                       mat2.(start_state-1).(end_state-1)
                   )
                 )
