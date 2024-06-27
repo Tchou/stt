@@ -55,6 +55,14 @@ module type Set = sig
   (** [mem e s] returns [true] if and only if [e] is an element of [s]. *)
 end
 
+module type Printable = sig
+  
+  type t
+
+  val export : t -> t Pr_basic.t
+
+end
+
 module type Interval = sig
   (** Intervals are sets that represents unions
       of ranges of elements.
@@ -62,6 +70,7 @@ module type Interval = sig
 
   include Common.T
   include Set with type t := t
+  include Printable with type t := t
 
   val range : elem -> elem -> t
 end
@@ -73,10 +82,25 @@ module type FiniteCofinite = sig
 
   include Common.T
   include Set with type t := t
+  include Printable with type t := t
 
   val is_finite : t -> bool
   (** [is_finite s] is [true] if and only if [s] is finite. *)
 end
+
+(* 
+
+module type Printable = sig
+  
+  type t
+
+  val export : t -> t Basic_printer.t
+
+end
+
+Rajouter dans Interval et FiniteCofinite "include Printable with type t := t"
+
+*)
 
 module type Bdd = sig
   (** Binary Decision Diagrams. *)

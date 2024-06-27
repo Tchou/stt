@@ -12,7 +12,7 @@ end
 
 type printer = formatter -> unit -> unit
 
-let printer s fmt () = pp_print_string fmt s
+let printer s fmt () = Format.fprintf fmt "%s" s
 
 type 'a testable = (module TESTABLE with type t = 'a)
 type test_result = (printer * printer, printer * printer) result

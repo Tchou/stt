@@ -33,3 +33,6 @@ _opam/
 syntax/*.conflicts
 
 bin/stt.exe
+
+# Romain's LSP use node_modules
+node_modules/

@@ -33,7 +33,7 @@ end
 module VarUnit = struct
   include Bdd.Make(Var)(Unit)
   let get t = t.unit
-  let set unit t = {t with unit }
+  let set unit t = { t with unit }
 end
 
 module rec Descr:

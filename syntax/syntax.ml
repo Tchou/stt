@@ -1,4 +1,3 @@
-
 module Lexer = Lexer
 module Parser : sig
   type 'a parser = ?debug:Format.formatter -> Sedlexing.lexbuf -> (bool * 'a, string) result

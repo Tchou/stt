@@ -76,4 +76,27 @@ end = struct
 
   let pp _ _ = assert false
   let sample _ = assert false
+
+  let export t =
+    if is_any t then
+      true, []
+    else if is_empty t then
+      false, []
+    else
+      let f (s : S.t) : (t * Pr_basic.single) list = 
+        S.fold (
+          fun (x : X.t)
+              (acc : (t * Pr_basic.single) list) : (t * Pr_basic.single) list ->
+            let f =
+              fun (fmt : Format.formatter) : unit ->
+                Format.fprintf fmt "%a" X.pp x
+            in
+            (singleton x, Pr_basic.Singleton f) :: acc
+        ) 
+        s []
+      in
+      match t with
+      | `Finite s -> false, f s
+      | `Cofinite s -> true, f s
+
 end

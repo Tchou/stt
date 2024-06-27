@@ -17,6 +17,7 @@ let token_to_string t =
   | INT (z) -> asprintf "INT (%s)" (Z.to_string z)
   | LP -> "LP"
   | LSB -> "LSB"
+  | MINUS -> "MINUS"
   | MINUSGT -> "MINUSGT"
   | MINUSMINUS -> "MINUSMINUS"
   | NOT -> "NOT"

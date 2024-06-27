@@ -14,6 +14,7 @@
 %token EQUAL "="
 %token LP "("
 %token LSB "["
+%token MINUS "-"
 %token MINUSGT "->"
 %token MINUSMINUS "--"
 %token NOT "~"

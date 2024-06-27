@@ -1,4 +1,4 @@
-open Test_utils
+open Utils
 
 module B =
   Stt.Base.Bdd.Make

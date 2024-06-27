@@ -148,7 +148,7 @@ simple_typ_:
 |   v = located(VAR)  { `Var v }
 
 |   z = INT { `Typ (Stt.Typ.Singleton.int z)   }
-|   i1=int_or_star; "--"; i2=int_or_star {
+|   i1=int_or_minus_star; "--"; i2=int_or_star {
     let open Stt in
     let t =
         match i1, i2 with
@@ -196,6 +196,9 @@ simple_typ_:
 %inline int_or_star:
     i = INT { Some i}
     | "*"   { None  }
+%inline int_or_minus_star:
+    i = INT { Some i}
+    | "-"?; "*"   { None  }
 
 
 re: re = located(re_)  { re }

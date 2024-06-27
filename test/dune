@@ -1,12 +1,19 @@
+(include_subdirs qualified)
+
 (test
- (name main)
- (modules :standard \ auto_printer)
+ (name type_test)
+ (modules :standard \ auto_printer syntax_test pp_test regexp_test)
  (libraries stt zarith)
  (empty_module_interface_if_absent))
 
+(test
+ (name syntax_test)
+ (modules syntax_test parsing utils pp_test regexp_test)
+ (libraries stt stt.syntax sedlex)
+ (empty_module_interface_if_absent))
 
 (test
  (name auto_printer)
  (modules auto_printer)
- (libraries stt zarith stt.syntax menhirLib sedlex)
+ (libraries stt stt.syntax zarith menhirLib sedlex)
  (empty_module_interface_if_absent))
