@@ -9,5 +9,5 @@ end
 
 module Make (X : V) :
   Sigs.Interval
-    with type t = Common.Pair(X)(X).t list
-     and type elem = X.t
+  with type t = Common.Pair(X)(X).t list
+   and type elem = X.t

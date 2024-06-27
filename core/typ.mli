@@ -286,7 +286,7 @@ end
 type elem = Witness.t
 (** An alias for the type of witnesses which allows the module [Typ] to
     implement [Base.Sigs.Set].
-  *)
+*)
 
 val singleton : elem -> t
 (** [singleton w] creates a type from a witness *)

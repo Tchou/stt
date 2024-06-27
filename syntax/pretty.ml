@@ -206,7 +206,7 @@ let get_leaf (type t) (module M : Typ.Basic with type Leaf.t = t) t =
   | _ -> assert false
 
 let pr_basic (type a) (module M : Typ.Basic with type Leaf.t = a)
-             (module E : Base.Sigs.Printable with type t = a) t acc =
+    (module E : Base.Sigs.Printable with type t = a) t acc =
   let l = get_leaf (module M) t in
   if M.Leaf.is_empty l then
     acc
@@ -246,24 +246,24 @@ let rec_names = Array.map Name.cons [|"X"; "Y"; "Z"; "T"; "U"; "V"; "W"|]
 let decompile t =
   let module Lt = struct
 
-      type nonrec t = t
+    type nonrec t = t
 
-      let compare (t1 : t)
-                  (t2 : t) : int =
-        Typ.compare t1.typ t2.typ
+    let compare (t1 : t)
+        (t2 : t) : int =
+      Typ.compare t1.typ t2.typ
 
-      let pp (fmt : Format.formatter)
-             (t : t) : unit = pr Prio.lowest fmt t.descr
+    let pp (fmt : Format.formatter)
+        (t : t) : unit = pr Prio.lowest fmt t.descr
 
-      let epsilon = {
-        typ = Typ.empty ;
-        descr = Printer (fun (_ : formatter) -> ())
-      }
-      let is_epsilon (t : t) = Typ.is_empty t.typ
+    let epsilon = {
+      typ = Typ.empty ;
+      descr = Printer (fun (_ : formatter) -> ())
+    }
+    let is_epsilon (t : t) = Typ.is_empty t.typ
 
-      let prio t = level t.descr
+    let prio t = level t.descr
 
-    end
+  end
   in
   let module Automaton = Automaton.Make(Lt) in
   let module Regexp = Automaton.R
@@ -367,7 +367,7 @@ let decompile t =
       let auto = create () in
       let memo = Hashtbl.create 16 in
       let rec loop (t : Typ.t)
-                   (q : state) : unit =
+          (q : state) : unit =
         let () =
           if Typ.subtype Builtins.nil t then
             set_final auto q ;
@@ -377,21 +377,21 @@ let decompile t =
         in
         let prod = Typ.VarProduct.(full_dnf @@ get t) in
         let prod = Seq.map (
-          fun ((vp, vn), (pl, nl)) ->
-            match vp, vn with
-            | [], [] -> (
-              List.map extract pl,
-              List.map extract nl
-            )
-            | _ -> raise Exit (* toplevel variables *)
+            fun ((vp, vn), (pl, nl)) ->
+              match vp, vn with
+              | [], [] -> (
+                  List.map extract pl,
+                  List.map extract nl
+                )
+              | _ -> raise Exit (* toplevel variables *)
           )
-          prod
+            prod
         in
         let todo =
           Normal.normal prod |>
           List.fold_left (
             fun (acc : (Typ.t * state) list)
-                (li, ri : Typ.t * Typ.t) : (Typ.t * state) list ->
+              (li, ri : Typ.t * Typ.t) : (Typ.t * state) list ->
               let q', acc = (
                 match Hashtbl.find_opt memo ri with
                 | None ->
@@ -404,7 +404,7 @@ let decompile t =
               let () = add_trans auto q (pr_descr li) q' in
               acc
           )
-          []
+            []
         in
         List.iter (fun (ri, q') -> loop ri q') todo
       in
@@ -415,14 +415,14 @@ let decompile t =
         set_start auto init ;
       in
       let regexp = Regexp.(simplify
-        @@ simp_to_ext
-        @@ to_regex_my auto
-      )
+                           @@ simp_to_ext
+                           @@ to_regex_my auto
+                          )
       in
       let printer fmt =
         let pp_lt =
           fun (fmt : formatter)
-              (lt : lt) : unit ->
+            (lt : lt) : unit ->
             pr Prio.lowest fmt lt.descr
         in
         Regexp.pp fmt pp_lt regexp
@@ -471,8 +471,8 @@ let decompile t =
     let nega = List.map arrow nega in
     let posa = match posa with [] -> any_arrow | l -> pcap l in
     let res = match nega with
-      [] -> posa
-    | l -> diff posa @@ pcup l
+        [] -> posa
+      | l -> diff posa @@ pcup l
     in
     res :: acc
   in

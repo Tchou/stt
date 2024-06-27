@@ -4,7 +4,7 @@ type pr = formatter -> unit
 type single =
   | Singleton of pr
   | Range of pr * pr
-(** The atomic printer type *)
+  (** The atomic printer type *)
 
 type 'a t = bool * ('a * single) list
 (** The type in order to print union
@@ -19,7 +19,7 @@ val pp_single : formatter -> single -> unit
 (** [pp_single fmt s] prints the single [s] in [fmt] *)
 
 val pp : ?pp_any:(formatter -> unit) -> ?pp_empty:(formatter -> unit)
-         -> formatter -> 'a t -> unit
+  -> formatter -> 'a t -> unit
 (** [pp ?pp_any ?pp_empty fmt t] prints [t] in [fmt]
 
     If t is (false, []), then we use [pp_empty]

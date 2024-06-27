@@ -32,46 +32,46 @@ module Make (X : V) = struct
     match l with
     | [] -> [ a, b ]
     | (c, d) :: ll ->
-        (* invariant, b < c *)
-        if b = X.max then [ a, b ]
-        else if X.succ b = c then (a, d) @:: ll
-        else (a, b) :: l
+      (* invariant, b < c *)
+      if b = X.max then [ a, b ]
+      else if X.succ b = c then (a, d) @:: ll
+      else (a, b) :: l
 
   let rec cup i1 i2 =
     match i1, i2 with
     | [], l | l, [] -> l
     | ((a1, b1) as c1) :: ii1, ((a2, b2) as c2) :: ii2 ->
-        if a1 > b2 then c2 @:: cup i1 ii2
-        else if a2 > b1 then c1 @:: cup ii1 i2
-        else
-          let u = min a1 a2 in
-          if b1 < b2 then cup ii1 ((u, b2) @:: ii2)
-          else if b1 = b2 then (u, b1) @:: cup ii1 ii2
-          else cup ((u, b1) @:: ii1) ii2
+      if a1 > b2 then c2 @:: cup i1 ii2
+      else if a2 > b1 then c1 @:: cup ii1 i2
+      else
+        let u = min a1 a2 in
+        if b1 < b2 then cup ii1 ((u, b2) @:: ii2)
+        else if b1 = b2 then (u, b1) @:: cup ii1 ii2
+        else cup ((u, b1) @:: ii1) ii2
 
   let rec cap i1 i2 =
     match i1, i2 with
     | [], _ | _, [] -> []
     | (a1, b1) :: ii1, (a2, b2) :: ii2 ->
-        if a1 > b2 then cap i1 ii2
-        else if a2 > b1 then cap ii1 i2
-        else
-          let u = max a1 a2 in
-          if b1 < b2 then (u, b1) @:: cap ii1 ((X.succ b1, b2) @:: ii2)
-          else if b1 = b2 then (u, b1) @:: cap ii1 ii2
-          else (u, b2) @:: cap ((X.succ b2, b1) @:: ii1) ii2
+      if a1 > b2 then cap i1 ii2
+      else if a2 > b1 then cap ii1 i2
+      else
+        let u = max a1 a2 in
+        if b1 < b2 then (u, b1) @:: cap ii1 ((X.succ b1, b2) @:: ii2)
+        else if b1 = b2 then (u, b1) @:: cap ii1 ii2
+        else (u, b2) @:: cap ((X.succ b2, b1) @:: ii1) ii2
 
   let rec diff i1 i2 =
     match i1, i2 with
     | ([] as l), _ | l, [] -> l
     | ((a1, b1) as c1) :: ii1, (a2, b2) :: ii2 ->
-        if b1 < a2 then c1 @:: diff ii1 i2
-        else if b2 < a1 then diff i1 ii2
-        else if a2 <= a1 then
-          if b2 < b1 then diff ((X.succ b2, b1) @:: ii1) ii2 else diff ii1 i2
-        else if (* a1 < a2 *)
-                b2 >= b1 then diff ((a1, X.pred a2) @:: ii1) i2
-        else diff ((a1, X.pred a2) @:: (X.succ b2, b1) @:: ii1) ii2
+      if b1 < a2 then c1 @:: diff ii1 i2
+      else if b2 < a1 then diff i1 ii2
+      else if a2 <= a1 then
+        if b2 < b1 then diff ((X.succ b2, b1) @:: ii1) ii2 else diff ii1 i2
+      else if (* a1 < a2 *)
+        b2 >= b1 then diff ((a1, X.pred a2) @:: ii1) i2
+      else diff ((a1, X.pred a2) @:: (X.succ b2, b1) @:: ii1) ii2
 
   (*
    -inf          +inf :: []
@@ -86,9 +86,9 @@ module Make (X : V) = struct
     match i1, i2 with
     | [], _ | _, [] -> false
     | (a1, b1) :: ii1, (a2, b2) :: ii2 ->
-        if a1 > b2 then intersect i1 ii2
-        else if a2 > b1 then intersect ii1 i2
-        else true
+      if a1 > b2 then intersect i1 ii2
+      else if a2 > b1 then intersect ii1 i2
+      else true
 
   let sample = function [] -> None | (a, _) :: _ -> Some a
 
@@ -108,14 +108,14 @@ module Make (X : V) = struct
           Format.fprintf fmt "%a" X.pp x
       in
       let l = Stdlib.List.fold_right (
-        fun (a, b : X.t * X.t)
+          fun (a, b : X.t * X.t)
             (acc : (t * Pr_basic.single) list) : (t * Pr_basic.single) list ->
-          if a = b then
-            (singleton a, Pr_basic.Singleton (f a)) :: acc
-          else
-            (range a b, Pr_basic.Range (f a, f b)) :: acc
-      )
-      t []
+            if a = b then
+              (singleton a, Pr_basic.Singleton (f a)) :: acc
+            else
+              (range a b, Pr_basic.Range (f a, f b)) :: acc
+        )
+          t []
       in
       false, l
 

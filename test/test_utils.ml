@@ -55,14 +55,14 @@ let do_tests l =
     | Ok (s1, s2) -> ("PASSED", s1, s2, true), 1
     | Error (s1, s2) -> ("FAILED", s1, s2, false), 0
     | exception e ->
-        ("EXCEPTION", printer "ERROR", printer (Printexc.to_string e), false), 0
+      ("EXCEPTION", printer "ERROR", printer (Printexc.to_string e), false), 0
   in
   let do_serie name tests =
     let passed, total, lst =
       List.fold_left
         (fun (ap, at, al) test ->
-          let v, i = do_test test in
-          ap + i, at + 1, (at + 1, v) :: al)
+           let v, i = do_test test in
+           ap + i, at + 1, (at + 1, v) :: al)
         (0, 0, []) tests
     in
     (name, List.rev lst), (passed, total)
@@ -70,8 +70,8 @@ let do_tests l =
   let passed, total, lst =
     List.fold_left
       (fun (ap, at, al) (name, tests) ->
-        let ((_, (p, t)) as r) = do_serie name tests in
-        (ap + if p = t then 1 else 0), at + 1, r :: al)
+         let ((_, (p, t)) as r) = do_serie name tests in
+         (ap + if p = t then 1 else 0), at + 1, r :: al)
       (0, 0, []) l
   in
   List.rev lst, (passed, total)
@@ -98,9 +98,9 @@ let get_counter =
   fun (id : string) ->
     try Hashtbl.find sessions id with
     | Not_found ->
-        let counter = make_counter () in
-        Hashtbl.replace sessions id counter;
-        counter
+      let counter = make_counter () in
+      Hashtbl.replace sessions id counter;
+      counter
 
 let summary id =
   let counter = get_counter id in
@@ -111,11 +111,11 @@ let summary id =
     match counter.failed_tests with
     | [] -> ()
     | _ ->
-        printf "@[Failed tests:@[@\n";
-        List.iter
-          (fun s -> printf "- @[%s@]@\n" s)
-          (List.rev counter.failed_tests);
-        printf "@]@\n@\n"
+      printf "@[Failed tests:@[@\n";
+      List.iter
+        (fun s -> printf "- @[%s@]@\n" s)
+        (List.rev counter.failed_tests);
+      printf "@]@\n@\n"
   end;
   printf "@]@]@\n"
 
@@ -127,18 +127,18 @@ let run ?(id = "global") name l =
   printf "@[Test: @['%s' (%d/%d)@\n" name passed total;
   List.iter
     (fun ((serie, tests), (passed, total)) ->
-      counter.total_tests <- counter.total_tests + total;
-      counter.tests <- counter.tests + passed;
-      printf "@[Serie: @['%s.%s': (%d/%d)@\n@\n" name serie passed total;
-      List.iter
-        (fun (i, (msg, s1, s2, ok)) ->
-          let id = sprintf "%s.%s.%d" name serie i in
-          if not ok then counter.failed_tests <- id :: counter.failed_tests;
-          printf "@['%s': %s@\n" id msg;
-          printf "   @[ expected: @[%a@]@]@\n" s1 ();
-          printf "   @[   result: @[%a@]@]@\n" s2 ();
-          printf "@]")
-        tests;
-      printf "@]@\n@]@\n")
+       counter.total_tests <- counter.total_tests + total;
+       counter.tests <- counter.tests + passed;
+       printf "@[Serie: @['%s.%s': (%d/%d)@\n@\n" name serie passed total;
+       List.iter
+         (fun (i, (msg, s1, s2, ok)) ->
+            let id = sprintf "%s.%s.%d" name serie i in
+            if not ok then counter.failed_tests <- id :: counter.failed_tests;
+            printf "@['%s': %s@\n" id msg;
+            printf "   @[ expected: @[%a@]@]@\n" s1 ();
+            printf "   @[   result: @[%a@]@]@\n" s2 ();
+            printf "@]")
+         tests;
+       printf "@]@\n@]@\n")
     l;
   printf "@]@]@\n"

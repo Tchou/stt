@@ -5,7 +5,7 @@ module type Letter = sig
 
   val compare : t -> t -> int
   (** [compare l1 l2] returns a negative number if [l1] < [l2], 0 if
-    [l1] = [l2] or a positive number otherwise *)
+      [l1] = [l2] or a positive number otherwise *)
   val pp : Format.formatter -> t -> unit
   (** [pp fmt l] casts the letter [l] into a string *)
 
@@ -33,7 +33,7 @@ module type S = sig
   (** The empty regex *)
   val is_empty : t_simp -> bool
   (** [is_empty r] checks if the regexp is the empty (not the
-    empty word : ɛ ≠ ∅) *)
+      empty word : ɛ ≠ ∅) *)
 
   val letter : lt -> t_simp
   (** [letter l] creates a regex with the letter [l] *)
@@ -46,12 +46,12 @@ module type S = sig
 
   val simp_to_ext : t_simp -> t_ext
   (** [simp_to_ext r] extends the simple regex [r], in order to simplify
-    or print it *)
+      or print it *)
 
   val pp : Format.formatter ->
     (Format.formatter -> lt -> unit) -> t_ext -> unit
   (** [pp fmt pp_lt r] pretty-print the regex [r] in the formatter [fmt], using
-    [pp_lt] to pretty-print a letter the letter*)
+      [pp_lt] to pretty-print a letter the letter*)
 
   val simplify : t_ext -> t_ext
   (** [simplify r] normalizes and simplfies the regex [r] as much as possible *)

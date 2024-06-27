@@ -9,7 +9,7 @@ let ( !! ) =
 let ( !@ ) =
   List.fold_left
     (fun acc (i, j) ->
-      Char.(cup acc (range (Uchar.of_char i) (Uchar.of_char j))))
+       Char.(cup acc (range (Uchar.of_char i) (Uchar.of_char j))))
     Char.empty
 
 let ( !. ) =
