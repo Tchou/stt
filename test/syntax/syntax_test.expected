@@ -1,4 +1,4 @@
-Test: 'reparsing' (2/8)
+Test: 'reparsing' (3/9)
       Serie: 'reparsing.basic': (15/15)
              
              'reparsing.basic.1': PASSED
@@ -149,7 +149,7 @@ Test: 'reparsing' (2/8)
                    result: 'a
              'reparsing.basic_w_var.4': PASSED
                  expected: (Int, 'a | 'b)
-                   result: (Int, ('b | 'a))
+                   result: (Int, ('a | 'b))
              'reparsing.basic_w_var.5': PASSED
                  expected: Bool & 'a
                    result: 'a & Bool
@@ -327,6 +327,25 @@ Test: 'reparsing' (2/8)
 
                        
                     
+             Serie: 'reparsing.boolean_vars_simp': (5/5)
+                    
+                    'reparsing.boolean_vars_simp.1': PASSED
+                        expected: 'a | 'b | 'c
+                          result: 'b | 'c | 'a
+                    'reparsing.boolean_vars_simp.2': PASSED
+                        expected: ~'a | ~'b | ~'c
+                          result: ~'c | ~'b | ~'a
+                    'reparsing.boolean_vars_simp.3': PASSED
+                        expected: ~'a | 'b | ~'c
+                          result: 'b | ~'c | ~'a
+                    'reparsing.boolean_vars_simp.4': PASSED
+                        expected: 'a & ('d | 'b | 'c)
+                          result: 'a & 'b | 'a & 'c | 'a & 'd
+                    'reparsing.boolean_vars_simp.5': PASSED
+                        expected: 'd & ('a | 'b | 'c)
+                          result: 'a & 'd | 'b & 'd & ~'a | 'c & 'd & ~'a & ~'b
+                    
+             
              
       Test: 'two_syntax' (1/4)
             Serie: 'two_syntax.basic': (7/7)
@@ -407,8 +426,8 @@ Test: 'reparsing' (2/8)
             
             
       SUMMARY:
-              Series: 3/12
-              Tests: 60/78
+              Series: 4/13
+              Tests: 65/83
               Failed tests:
                            - reparsing.where.5
                            - reparsing.where.6

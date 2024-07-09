@@ -190,12 +190,16 @@ module Make (X : Common.T) (L : Sigs.Set) = struct
       | Node { var; low; hi; _ } ->
         if is_empty low then loop acc_cup (atom true acc_cap var) hi
         else if is_empty hi then loop acc_cup (atom false acc_cap var) low
-        else
+
+        else if is_any hi then (* special case to generate smaller lines *)
           let acc_cup = loop acc_cup (atom true acc_cap var) hi in
-          if is_any hi then
-            loop acc_cup acc_cap low  (* special case to generate smaller lines *)
-          else
-            loop acc_cup (atom false acc_cap var) low
+          loop acc_cup acc_cap low
+        else if is_any low then
+          let acc_cup = loop acc_cup acc_cap hi in
+          loop acc_cup (atom false acc_cap var) low
+        else
+          let acc_cup = loop acc_cup (atom true acc_cap var) hi in      
+          loop acc_cup (atom false acc_cap var) low
     in
     loop empty any t
 

@@ -210,4 +210,11 @@ let () =
           and Y = Y | (Y, Z) | `nil
           and Z = 'a | X"
     ] ;
+    "boolean_vars_simp", [
+      check "'a | 'b | 'c";
+      check "~'a | ~'b | ~'c";
+      check "~'a | 'b | ~'c";
+      check "'a & ('d | 'b | 'c)";
+      check "'d & ('a | 'b | 'c)"
+    ]
   ]
