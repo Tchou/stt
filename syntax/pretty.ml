@@ -388,7 +388,9 @@ let decompile t =
             prod
         in
         let todo =
-          Normal.normal prod |>
+          Normal.simple prod |>
+          List.of_seq |>
+          List.flatten |>
           List.fold_left (
             fun (acc : (Typ.t * state) list)
               (li, ri : Typ.t * Typ.t) : (Typ.t * state) list ->
