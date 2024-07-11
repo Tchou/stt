@@ -632,6 +632,7 @@ and check_arrow_conj stack t arrow_bdd =
   arrow_bdd |>
   Product.dnf |>
   Seq.iter (fun ((pos, neg), _) -> check_neg_arrows stack t pos neg)
+
 and check_neg_arrows stack t pos neg =
   match neg with
   | [] -> non_empty t (([],[]), Arrow t)
@@ -640,6 +641,7 @@ and check_neg_arrows stack t pos neg =
       check_single_neg_arrow stack t arr pos
     with
     | Found_non_empty _ -> check_neg_arrows stack t pos nneg
+
 and check_single_neg_arrow stack t (n1, n2) pos =
   let rec loop acc_t1 acc_t2 pos =
     match pos with
@@ -647,14 +649,14 @@ and check_single_neg_arrow stack t (n1, n2) pos =
     | (t1, t2) :: lpos ->
       let acc_t1' = diff acc_t1 (descr t1) in
       try
-        check_non_empty stack acc_t1
+        check_non_empty stack acc_t1'
       with
       | Found_non_empty _ ->
         begin
           loop acc_t1' acc_t2 lpos;
           let acc_t2' = cap acc_t2 (descr t2) in
           try
-            check_non_empty stack acc_t2
+            check_non_empty stack acc_t2'
           with
           | Found_non_empty _ ->
             loop acc_t1 acc_t2' lpos
@@ -663,7 +665,7 @@ and check_single_neg_arrow stack t (n1, n2) pos =
   loop
     (descr n1)
     (neg (descr n2))
-    (match pos with [] -> [(node empty, node any)] | _ -> pos)
+    pos
 
 let sample t =
   try
