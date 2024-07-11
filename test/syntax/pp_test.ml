@@ -3,28 +3,7 @@ open Parsing
 open Stt
 open Format
 
-let alpha_renaming (t : Typ.t)
-    (t' : Typ.t) =
-  let vp, vn = Typ.vars t in
-  let v = Var.Set.union vp vn in
-  let var_map = Var.Set.fold (
-      fun v acc -> (v.Var.name, v) :: acc
-    ) v []
-  in
-  let vp', vn' = Typ.vars t' in
-  let v' = Var.Set.union vp' vn' in
-  let subst, s = Var.Set.fold (
-      fun v (acc_l, acc_s) ->
-        let n_var, acc_s =
-          match List.assoc_opt v.Var.name var_map with
-          | Some n_var ->
-            n_var, asprintf "%s %a->%a" acc_s Var.dump v Var.dump n_var
-          | None -> v, asprintf "%s %a" acc_s Var.dump v
-        in
-        Subst.add v (Typ.var n_var) acc_l, acc_s
-    ) v' (Subst.of_list [], "")
-  in
-  Subst.apply subst t', s
+
 
 let () =
   let check (s : string) : unit -> test_result =

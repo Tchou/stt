@@ -11,6 +11,7 @@ let () =
       let t = parse_type @@ "type t1 ('a, 'b, 'c, 'd) = " ^ t1 in
       try
         let t' = parse_type @@ "type t2 ('a, 'b, 'c, 'd) = " ^ t2 in
+        let t',_ = alpha_renaming t t' in
         fun (_ : unit) : test_result ->
           let b' =
             b = Typ.equiv t t'
@@ -70,20 +71,17 @@ let () =
     "rec",
     [
       check "X where X = (Int, X) | `nil" "[ Int* ]" ;
-      check "X where X = (Int, (Int, X)) | `nil" "[ Int+ ]" ;
+      check "X where X = (Int, (Int, Y)) and Y = X | `nil" "[ (Int;Int)+ ]" ;
       check_false "X where X = (Int, X) | `nil" "[ [ Int* ]* ]" ;
       check_false "X where X = ((Int, Int), X) | `nil" "[ Int+ ]" ;
     ] ;
 
     "basic_w_var",
     [
-      (* FAILED *)
       check "('a, `nil)" "[ 'a ]" ;
 
-      (* FAILED *)
       check "('a, ('b, `nil))" "[ 'a; 'b ]" ;
 
-      (* FAILED *)
       check "(('a, `nil), 'b)" "([ 'a ], 'b)" ;
 
       check_false "(('a, `nil), 'b)" "[ 'a; 'b ]" ;
@@ -91,11 +89,9 @@ let () =
     ] ;
     "rec_w_var",
     [
-      (* FAILED *)
       check "X where X = ('a, X) | `nil" "[ 'a* ]" ;
 
-      (* FAILED *)
-      check "X where X = ('a, ('a, X)) | `nil" "[ 'a+ ]" ;
+      check "X where X = ('a, ('a, X)) | `nil" "[ ('a;'a)* ]" ;
 
       check_false "X where X = ('a, X) | `nil" "[ [ 'a* ]* ]" ;
       check_false "X where X = (('a, 'a), X) | `nil" "[ 'a+ ]" ;
