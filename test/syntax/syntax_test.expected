@@ -1,4 +1,4 @@
-Test: 'reparsing' (3/9)
+Test: 'reparsing' (4/9)
       Serie: 'reparsing.basic': (15/15)
              
              'reparsing.basic.1': PASSED
@@ -96,7 +96,7 @@ Test: 'reparsing' (3/9)
                    result: [Int; Bool+; Int]
              'reparsing.regexp.5': PASSED
                  expected: [ Int | Bool | Char* ]
-                   result: [(Int | Bool | Char+)?]
+                   result: [(Char+ | Int | Bool)?]
              'reparsing.regexp.6': PASSED
                  expected: [ [ Int* ]* ]
                    result: [([Int*]; [Int*]*)?]
@@ -119,7 +119,7 @@ Test: 'reparsing' (3/9)
                    result: [Int; [Int*]]
              'reparsing.types.3': PASSED
                  expected: [ 42* ; (X | Y?)+ ] where X = (Any, X) | `nil and Y = (Empty, Y) | `nil
-                   result: [(42*; ([Any+] | `nil)*)?]
+                   result: [(42*; (`nil | [Any*])*)?]
              'reparsing.types.4': FAILED
                  expected: X where X = [ Y ] | `nil
           and Y = X
@@ -174,7 +174,7 @@ Test: 'reparsing' (3/9)
                    result: ['a*]
              'reparsing.where_w_var.2': PASSED
                  expected: X where X = ('a, X) | ('b, X) | `nil
-                   result: [('a & 'b | 'a & ~'b | 'b & ~'a)*]
+                   result: [('a | 'b)*]
              'reparsing.where_w_var.3': PASSED
                  expected: (X, X) where X = ('a, X) | `nil
                    result: [['a*]; 'a*]
@@ -191,7 +191,7 @@ Test: 'reparsing' (3/9)
 
              
       
-      Serie: 'reparsing.regexp_w_var': (4/6)
+      Serie: 'reparsing.regexp_w_var': (6/6)
              
              'reparsing.regexp_w_var.1': PASSED
                  expected: [ 'a ]
@@ -199,255 +199,169 @@ Test: 'reparsing' (3/9)
              'reparsing.regexp_w_var.2': PASSED
                  expected: [ 'a* ]
                    result: ['a*]
-             'reparsing.regexp_w_var.3': FAILED
-                 expected: ['a; 'b; 'b & ~'a*;
- ('a & ~'b | 'a & 'b; ('b & ~'a*; 'a & 'b)*; 'b & ~'a*; 'a & ~'b |
-  'a & 'b; ('b & ~'a*; 'a & 'b)*)]
-                   result: REPARSING_ERROR : Failure("Cannot mix cap and regular expression") 
- 
-                           [ 'a; ('b)+; 'a ] 
- VS 
-
- ['a; 'b; 'b & ~'a*;
- ('a & ~'b | 'a & 'b; ('b & ~'a*; 'a & 'b)*; 'b & ~'a*; 'a & ~'b |
-  'a & 'b; ('b & ~'a*; 'a & 'b)*)]]
-
-
-                'reparsing.regexp_w_var.4': PASSED
-                    expected: [ 'a | 'b | 'c* ]
-                      result: [('a & 'b & ~'c | 'b & ~'a & ~'c | 'a & ~'b & ~'c |
-  ('a & 'c & ~'b | 'c & ~'a & ~'b | 'a & 'b & 'c | 'b & 'c & ~'a); 'c*)?]
-                'reparsing.regexp_w_var.5': PASSED
-                    expected: [ [ 'a* ]* ]
-                      result: [(['a*]; ['a*]*)?]
-                'reparsing.regexp_w_var.6': FAILED
-                    expected: ['a; 'a & 'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*; 'a & 'b;
- (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)* |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*;
- ('a & ~'b |
-  'a & 'b; (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)*;
-  ('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & ~'b) |
- 'a; 'a & ~'b; 'a | 'a; 'a & 'b; 'a; 'a & ~'b; 'a |
- 'a; ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*; 'a & ~'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*; 'b & ~'a+; 'a & ~'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*; 'a & 'b;
- (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)*; 'b & ~'a+;
- ('a & 'b; ('b & ~'a+; 'a & 'b)*; 'b & ~'a+)?; 'a & ~'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*;
- ('a & ~'b |
-  'a & 'b; (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)*;
-  ('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & ~'b);
- 'a]
-                      result: REPARSING_ERROR : Failure("Cannot mix cap and regular expression") 
- 
-                              [
+             'reparsing.regexp_w_var.3': PASSED
+                 expected: [ 'a; ('b)+; 'a ]
+                   result: ['a; 'b+; 'a]
+             'reparsing.regexp_w_var.4': PASSED
+                 expected: [ 'a | 'b | 'c* ]
+                   result: [('c+ | 'a | 'b)?]
+             'reparsing.regexp_w_var.5': PASSED
+                 expected: [ [ 'a* ]* ]
+                   result: [(['a*]; ['a*]*)?]
+             'reparsing.regexp_w_var.6': PASSED
+                 expected: [
           'a;'a;'a
           | 'a;'b;'a;'a;'a
           | 'a;'b;'a;('b)*;'a;'a
-        ] 
- 
-                              VS 
-
- ['a; 'a & 'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*; 'a & 'b;
- (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)* |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*;
- ('a & ~'b |
-  'a & 'b; (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)*;
-  ('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & ~'b) |
- 'a; 'a & ~'b; 'a | 'a; 'a & 'b; 'a; 'a & ~'b; 'a |
- 'a; ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*; 'a & ~'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*; 'b & ~'a+; 'a & ~'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*; 'a & 'b;
- (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)*; 'b & ~'a+;
- ('a & 'b; ('b & ~'a+; 'a & 'b)*; 'b & ~'a+)?; 'a & ~'b; 'a |
- 'a; ('a & 'b; 'a | ('b & ~'a; 'a | 'a & 'b; 'a; 'b & ~'a); 'b & ~'a*);
- 'a & 'b; ('b & ~'a+; 'a & 'b)*;
- ('a & ~'b |
-  'a & 'b; (('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & 'b)*;
-  ('b & ~'a+; 'a & 'b; ('b & ~'a+; 'a & 'b)*)?; 'a & ~'b);
- 'a]]
-
-
-                   
+        ]
+                   result: ['a; ('b; 'a; 'b*)?; 'a; 'a]
              
-             Serie: 'reparsing.types_w_var': (2/5)
-                    
-                    'reparsing.types_w_var.1': PASSED
-                        expected: ('a, X) where X = [ 'a; X ] | `nil
-                          result: ['a; ('a; [('a; X)?])?] where X = [('a; X)?]
-                    'reparsing.types_w_var.2': PASSED
-                        expected: [ 'a; X ] where X = ('a, X) | `nil
-                          result: ['a; ['a*]]
-                    'reparsing.types_w_var.3': FAILED
-                        expected: [(('a & ['b & 'c*; 'b & ~'c; 'b*] | 'a & ['b & 'c*; 'c & ~'b; 'c*] |
-   'a & ['b & 'c*] |
-   'a & Any \ [('b & 'c*; ('b & ~'c; 'b* | 'c & ~'b; 'c*)?)?])*;
-  ((~'a & ['b & 'c*; 'b & ~'c; 'b*] | ~'a & ['b & 'c*; 'c & ~'b; 'c*] |
-    ~'a & ['b & 'c*]);
-   (['b & 'c*; 'c & ~'b; 'c*] | ['b & 'c*; 'b & ~'c; 'b*] | ['b & 'c*])*)?)?]
-                          result: REPARSING_ERROR : Failure("Cannot mix cap and regular expression") 
- 
-                                  [ ('a)* ; (X | Y?)+ ]
+      
+      Serie: 'reparsing.types_w_var': (3/5)
+             
+             'reparsing.types_w_var.1': PASSED
+                 expected: ('a, X) where X = [ 'a; X ] | `nil
+                   result: ['a; ('a; [('a; X)?])?] where X = [('a; X)?]
+             'reparsing.types_w_var.2': PASSED
+                 expected: [ 'a; X ] where X = ('a, X) | `nil
+                   result: ['a; ['a*]]
+             'reparsing.types_w_var.3': PASSED
+                 expected: [ ('a)* ; (X | Y?)+ ]
           where X = ('b, X) | `nil
-          and Y = ('c, Y) | `nil 
- 
-                                  VS 
-
- [(('a & ['b & 'c*; 'b & ~'c; 'b*] | 'a & ['b & 'c*; 'c & ~'b; 'c*] |
-   'a & ['b & 'c*] |
-   'a & Any \ [('b & 'c*; ('b & ~'c; 'b* | 'c & ~'b; 'c*)?)?])*;
-  ((~'a & ['b & 'c*; 'b & ~'c; 'b*] | ~'a & ['b & 'c*; 'c & ~'b; 'c*] |
-    ~'a & ['b & 'c*]);
-   (['b & 'c*; 'c & ~'b; 'c*] | ['b & 'c*; 'b & ~'c; 'b*] | ['b & 'c*])*)?)?]]
+          and Y = ('c, Y) | `nil
+                   result: [('a*; (['c*] | ['b*])*)?]
+             'reparsing.types_w_var.4': FAILED
+                 expected: X where X = [ X* ; X* ; ('a, 'a) ] | ('b, `nil)
+                   result: PARSING_ERROR : File "core/typ.ml", line 244, characters 2-8: Assertion failed
 
 
-                       'reparsing.types_w_var.4': FAILED
-                           expected: X where X = [ X* ; X* ; ('a, 'a) ] | ('b, `nil)
-                             result: PARSING_ERROR : File "core/typ.ml", line 244, characters 2-8: Assertion failed
-
-
-                       'reparsing.types_w_var.5': FAILED
-                           expected: (X, X)
+             'reparsing.types_w_var.5': FAILED
+                 expected: (X, X)
           where X = (X, Y) | `nil
           and Y = Y | (Y, Z) | `nil
           and Z = 'a | X
-                             result: PARSING_ERROR : File "core/typ.ml", line 244, characters 2-8: Assertion failed
+                   result: PARSING_ERROR : File "core/typ.ml", line 244, characters 2-8: Assertion failed
 
 
-                       
-                    
-             Serie: 'reparsing.boolean_vars_simp': (5/5)
-                    
-                    'reparsing.boolean_vars_simp.1': PASSED
-                        expected: 'a | 'b | 'c
-                          result: 'b | 'c | 'a
-                    'reparsing.boolean_vars_simp.2': PASSED
-                        expected: ~'a | ~'b | ~'c
-                          result: ~'c | ~'b | ~'a
-                    'reparsing.boolean_vars_simp.3': PASSED
-                        expected: ~'a | 'b | ~'c
-                          result: 'b | ~'c | ~'a
-                    'reparsing.boolean_vars_simp.4': PASSED
-                        expected: 'a & ('d | 'b | 'c)
-                          result: 'a & 'b | 'a & 'c | 'a & 'd
-                    'reparsing.boolean_vars_simp.5': PASSED
-                        expected: 'd & ('a | 'b | 'c)
-                          result: 'a & 'd | 'b & 'd & ~'a | 'c & 'd & ~'a & ~'b
-                    
              
-             
-      Test: 'two_syntax' (1/4)
-            Serie: 'two_syntax.basic': (7/7)
-                   
-                   'two_syntax.basic.1': PASSED
-                       expected: (Int, `nil) = [ Int ]
-                         result: true
-                   'two_syntax.basic.2': PASSED
-                       expected: (42, `nil) = [ 42 ]
-                         result: true
-                   'two_syntax.basic.3': PASSED
-                       expected: (Bool, (Int, `nil)) = [ Bool; Int ]
-                         result: true
-                   'two_syntax.basic.4': PASSED
-                       expected: `nil = []
-                         result: true
-                   'two_syntax.basic.5': PASSED
-                       expected: ((Int, `nil), Bool) = ([ Int ], Bool)
-                         result: true
-                   'two_syntax.basic.6': PASSED
-                       expected: ((Int, `nil), Bool) != [ Int; Bool ]
-                         result: true
-                   'two_syntax.basic.7': PASSED
-                       expected: (Int, Int) != [ Int; Int ]
-                         result: true
-                   
-            
-            Serie: 'two_syntax.rec': (3/4)
-                   
-                   'two_syntax.rec.1': PASSED
-                       expected: X where X = (Int, X) | `nil = [ Int* ]
-                         result: true
-                   'two_syntax.rec.2': FAILED
-                       expected: X where X = (Int, (Int, X)) | `nil = [ Int+ ]
-                         result: false
-                   'two_syntax.rec.3': PASSED
-                       expected: X where X = (Int, X) | `nil != [ [ Int* ]* ]
-                         result: true
-                   'two_syntax.rec.4': PASSED
-                       expected: X where X = ((Int, Int), X) | `nil != [ Int+ ]
-                         result: true
-                   
-            
-            Serie: 'two_syntax.basic_w_var': (2/5)
-                   
-                   'two_syntax.basic_w_var.1': FAILED
-                       expected: ('a, `nil) = [ 'a ]
-                         result: false
-                   'two_syntax.basic_w_var.2': FAILED
-                       expected: ('a, ('b, `nil)) = [ 'a; 'b ]
-                         result: false
-                   'two_syntax.basic_w_var.3': FAILED
-                       expected: (('a, `nil), 'b) = ([ 'a ], 'b)
-                         result: false
-                   'two_syntax.basic_w_var.4': PASSED
-                       expected: (('a, `nil), 'b) != [ 'a; 'b ]
-                         result: true
-                   'two_syntax.basic_w_var.5': PASSED
-                       expected: ('a, 'a) != [ 'a; 'a ]
-                         result: true
-                   
-            
-            Serie: 'two_syntax.rec_w_var': (2/4)
-                   
-                   'two_syntax.rec_w_var.1': FAILED
-                       expected: X where X = ('a, X) | `nil = [ 'a* ]
-                         result: false
-                   'two_syntax.rec_w_var.2': FAILED
-                       expected: X where X = ('a, ('a, X)) | `nil = [ 'a+ ]
-                         result: false
-                   'two_syntax.rec_w_var.3': PASSED
-                       expected: X where X = ('a, X) | `nil != [ [ 'a* ]* ]
-                         result: true
-                   'two_syntax.rec_w_var.4': PASSED
-                       expected: X where X = (('a, 'a), X) | `nil != [ 'a+ ]
-                         result: true
-                   
-            
-            
-      SUMMARY:
-              Series: 4/13
-              Tests: 65/83
-              Failed tests:
-                           - reparsing.where.5
-                           - reparsing.where.6
-                           - reparsing.types.4
-                           - reparsing.types.5
-                           - reparsing.basic_w_var.8
-                           - reparsing.basic_w_var.9
-                           - reparsing.where_w_var.5
-                           - reparsing.regexp_w_var.3
-                           - reparsing.regexp_w_var.6
-                           - reparsing.types_w_var.3
-                           - reparsing.types_w_var.4
-                           - reparsing.types_w_var.5
-                           - two_syntax.rec.2
-                           - two_syntax.basic_w_var.1
-                           - two_syntax.basic_w_var.2
-                           - two_syntax.basic_w_var.3
-                           - two_syntax.rec_w_var.1
-                           - two_syntax.rec_w_var.2
-                           
-              
-              
       
+      Serie: 'reparsing.boolean_vars_simp': (5/5)
+             
+             'reparsing.boolean_vars_simp.1': PASSED
+                 expected: 'a | 'b | 'c
+                   result: 'b | 'c | 'a
+             'reparsing.boolean_vars_simp.2': PASSED
+                 expected: ~'a | ~'b | ~'c
+                   result: ~'c | ~'b | ~'a
+             'reparsing.boolean_vars_simp.3': PASSED
+                 expected: ~'a | 'b | ~'c
+                   result: 'b | ~'c | ~'a
+             'reparsing.boolean_vars_simp.4': PASSED
+                 expected: 'a & ('d | 'b | 'c)
+                   result: 'a & 'b | 'a & 'c | 'a & 'd
+             'reparsing.boolean_vars_simp.5': PASSED
+                 expected: 'd & ('a | 'b | 'c)
+                   result: 'a & 'd | 'b & 'd & ~'a | 'c & 'd & ~'a & ~'b
+             
+      
+      
+Test: 'two_syntax' (1/4)
+      Serie: 'two_syntax.basic': (7/7)
+             
+             'two_syntax.basic.1': PASSED
+                 expected: (Int, `nil) = [ Int ]
+                   result: true
+             'two_syntax.basic.2': PASSED
+                 expected: (42, `nil) = [ 42 ]
+                   result: true
+             'two_syntax.basic.3': PASSED
+                 expected: (Bool, (Int, `nil)) = [ Bool; Int ]
+                   result: true
+             'two_syntax.basic.4': PASSED
+                 expected: `nil = []
+                   result: true
+             'two_syntax.basic.5': PASSED
+                 expected: ((Int, `nil), Bool) = ([ Int ], Bool)
+                   result: true
+             'two_syntax.basic.6': PASSED
+                 expected: ((Int, `nil), Bool) != [ Int; Bool ]
+                   result: true
+             'two_syntax.basic.7': PASSED
+                 expected: (Int, Int) != [ Int; Int ]
+                   result: true
+             
+      
+      Serie: 'two_syntax.rec': (3/4)
+             
+             'two_syntax.rec.1': PASSED
+                 expected: X where X = (Int, X) | `nil = [ Int* ]
+                   result: true
+             'two_syntax.rec.2': FAILED
+                 expected: X where X = (Int, (Int, X)) | `nil = [ Int+ ]
+                   result: false
+             'two_syntax.rec.3': PASSED
+                 expected: X where X = (Int, X) | `nil != [ [ Int* ]* ]
+                   result: true
+             'two_syntax.rec.4': PASSED
+                 expected: X where X = ((Int, Int), X) | `nil != [ Int+ ]
+                   result: true
+             
+      
+      Serie: 'two_syntax.basic_w_var': (2/5)
+             
+             'two_syntax.basic_w_var.1': FAILED
+                 expected: ('a, `nil) = [ 'a ]
+                   result: false
+             'two_syntax.basic_w_var.2': FAILED
+                 expected: ('a, ('b, `nil)) = [ 'a; 'b ]
+                   result: false
+             'two_syntax.basic_w_var.3': FAILED
+                 expected: (('a, `nil), 'b) = ([ 'a ], 'b)
+                   result: false
+             'two_syntax.basic_w_var.4': PASSED
+                 expected: (('a, `nil), 'b) != [ 'a; 'b ]
+                   result: true
+             'two_syntax.basic_w_var.5': PASSED
+                 expected: ('a, 'a) != [ 'a; 'a ]
+                   result: true
+             
+      
+      Serie: 'two_syntax.rec_w_var': (2/4)
+             
+             'two_syntax.rec_w_var.1': FAILED
+                 expected: X where X = ('a, X) | `nil = [ 'a* ]
+                   result: false
+             'two_syntax.rec_w_var.2': FAILED
+                 expected: X where X = ('a, ('a, X)) | `nil = [ 'a+ ]
+                   result: false
+             'two_syntax.rec_w_var.3': PASSED
+                 expected: X where X = ('a, X) | `nil != [ [ 'a* ]* ]
+                   result: true
+             'two_syntax.rec_w_var.4': PASSED
+                 expected: X where X = (('a, 'a), X) | `nil != [ 'a+ ]
+                   result: true
+             
+      
+      
+SUMMARY:
+        Series: 5/13
+        Tests: 68/83
+        Failed tests:
+                     - reparsing.where.5
+                     - reparsing.where.6
+                     - reparsing.types.4
+                     - reparsing.types.5
+                     - reparsing.basic_w_var.8
+                     - reparsing.basic_w_var.9
+                     - reparsing.where_w_var.5
+                     - reparsing.types_w_var.4
+                     - reparsing.types_w_var.5
+                     - two_syntax.rec.2
+                     - two_syntax.basic_w_var.1
+                     - two_syntax.basic_w_var.2
+                     - two_syntax.basic_w_var.3
+                     - two_syntax.rec_w_var.1
+                     - two_syntax.rec_w_var.2
+                     
+        
+        
